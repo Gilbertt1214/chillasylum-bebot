@@ -17,11 +17,11 @@ function createProgressBar(percentage) {
 }
 
 function getShipMessage(percentage) {
-    if (percentage >= 90) return "Perfect match!";
-    if (percentage >= 70) return "Great compatibility";
-    if (percentage >= 50) return "Could work out";
-    if (percentage >= 30) return "Needs effort";
-    return "Not compatible";
+    if (percentage >= 90) return "Bucin tingkat dewa, siap nikah!";
+    if (percentage >= 70) return "Udah cocok, tinggal pdkt aja";
+    if (percentage >= 50) return "Masih ada harapan nih";
+    if (percentage >= 30) return "Butuh usaha lebih bro";
+    return "Mending cari yang lain";
 }
 
 module.exports = {
@@ -79,11 +79,11 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setColor(color)
-                .setTitle("Love Meter")
+                .setTitle("Love Meter 💕")
                 .addFields(
                     {
                         name: "Match",
-                        value: `${member1.displayName} & ${member2.displayName}`,
+                        value: `${member1.displayName} 💖 ${member2.displayName}`,
                         inline: false,
                     },
                     {
