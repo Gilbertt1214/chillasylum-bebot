@@ -56,10 +56,19 @@ for (const file of eventFiles) {
     }
 }
 
-// Handle prefix commands
+// Handle messages
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
+    // Respon halo
+    const haloKeywords = ["halo", "hai", "hello", "hi", "hey"];
+    const content = message.content.toLowerCase();
+    if (haloKeywords.some((word) => content.includes(word))) {
+        message.reply(`👋 Halo ${message.author.username}!`);
+        return;
+    }
+
+    // Handle prefix commands
     const prefix = "!";
     if (!message.content.startsWith(prefix)) return;
 
