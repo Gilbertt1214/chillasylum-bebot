@@ -1,7 +1,7 @@
 const deployCommands = require("../utils/deployCommands");
 
 module.exports = {
-    name: "ready",
+    name: "clientReady",
     once: true,
     async execute(client) {
         console.log(`✅ Bot login sebagai ${client.user.tag}`);
