@@ -79,20 +79,15 @@ function createLoveMeterImage(percentage) {
     ctx.fill();
 
     // Percentage text
-    ctx.font = "bold 32px Arial";
+    ctx.font = "bold 32px sans-serif";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.fillText(`${percentage}%`, centerX, centerY + 50);
 
     // Title
-    ctx.font = "bold 24px Arial";
+    ctx.font = "bold 24px sans-serif";
     ctx.fillStyle = "#e63946";
     ctx.fillText("LOVE METER", centerX, 35);
-
-    // Hearts on sides
-    ctx.font = "30px Arial";
-    ctx.fillText("💔", 50, 130);
-    ctx.fillText("❤️", 350, 130);
 
     return canvas.toBuffer("image/png");
 }
@@ -154,21 +149,13 @@ module.exports = {
             else if (compatibility >= 50) color = "#fee75c";
             else if (compatibility >= 30) color = "#5865f2";
 
+            const name1 = member1.displayName || member1.user.username;
+            const name2 = member2.displayName || member2.user.username;
+
             const embed = new EmbedBuilder()
                 .setColor(color)
                 .setTitle("Love Meter 💕")
-                .addFields(
-                    {
-                        name: "Match",
-                        value: `${member1.displayName} 💖 ${member2.displayName}`,
-                        inline: false,
-                    },
-                    {
-                        name: "Result",
-                        value: message,
-                        inline: false,
-                    }
-                )
+                .setDescription(`**${name1}** 💖 **${name2}**\n\n${message}`)
                 .setImage("attachment://lovemeter.png")
                 .setFooter({
                     text: `Requested by ${interaction.user.username}`,
