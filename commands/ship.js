@@ -19,8 +19,8 @@ function getShipMessage(percentage) {
     if (percentage >= 90) return "Jir gacor takdir inimah, JODOH DARI OROK!";
     if (percentage >= 70) return "Udah cocok, Tinggal confess aja xixi";
     if (percentage >= 50) return "Hmm notbad masih ada kesempatan";
-    if (percentage >= 30) return "Kecil banget usaha lagi ya wkwk";
-    if (percentage >= 10) return "Maap nt HAHAHA";
+    if (percentage >= 30) return "Kecil banget effort lagi ya WKWK";
+    return "Maap nt HAHAHA";
 }
 
 function createLoveMeterImage(percentage) {
