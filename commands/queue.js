@@ -1,4 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    MessageFlags,
+} = require("discord.js");
 const { getKazagumo } = require("../utils/lavalink");
 
 module.exports = {
@@ -14,7 +18,10 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor("#2b2d31")
                 .setDescription("Queue kosong.");
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({
+                embeds: [embed],
+                flags: MessageFlags.Ephemeral,
+            });
         }
 
         const current = player.queue.current;

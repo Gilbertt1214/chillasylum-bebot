@@ -1,4 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    MessageFlags,
+} = require("discord.js");
 const { getKazagumo } = require("../utils/lavalink");
 
 module.exports = {
@@ -12,7 +16,10 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor("#ed4245")
                 .setDescription("Kamu harus join voice channel dulu!");
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({
+                embeds: [embed],
+                flags: MessageFlags.Ephemeral,
+            });
         }
 
         const kazagumo = getKazagumo();
@@ -22,7 +29,10 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor("#ed4245")
                 .setDescription("Tidak ada lagu yang sedang diputar.");
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({
+                embeds: [embed],
+                flags: MessageFlags.Ephemeral,
+            });
         }
 
         // Check if user is in the same voice channel as bot
@@ -32,7 +42,10 @@ module.exports = {
                 .setDescription(
                     `Kamu harus join <#${player.voiceId}> untuk control musik.`
                 );
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({
+                embeds: [embed],
+                flags: MessageFlags.Ephemeral,
+            });
         }
 
         const skippedTrack = player.queue.current;
