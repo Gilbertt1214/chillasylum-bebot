@@ -142,20 +142,30 @@ function initLavalink(client) {
         safeSend(textChannel, embed);
     });
 
-    // Player end - Queue finished
-    kazagumo.on("playerEnd", (player) => {
-        if (player.queue.length === 0) {
-            const textChannel = player.data.get("textChannel");
-            if (!textChannel) return;
+    // Player end - Auto play next or show queue finished
+    kazagumo.on("playerEnd", (player, track, reason) => {
+        console.log(
+            `⏹️ Track ended: ${track?.title || "Unknown"}, Reason: ${reason}`
+        );
 
-            const embed = new EmbedBuilder()
-                .setColor("#2b2d31")
-                .setDescription(
-                    "Queue finished. Use `/play` to add more songs."
-                );
-
-            safeSend(textChannel, embed);
+        // If there are more tracks in queue, play next
+        if (player.queue.length > 0) {
+            console.log(
+                `📋 Queue has ${player.queue.length} tracks, playing next...`
+            );
+            player.play();
+            return;
         }
+
+        // Queue is empty
+        const textChannel = player.data.get("textChannel");
+        if (!textChannel) return;
+
+        const embed = new EmbedBuilder()
+            .setColor("#2b2d31")
+            .setDescription("Queue finished. Use `/play` to add more songs.");
+
+        safeSend(textChannel, embed);
     });
 
     // Player empty - Auto disconnect
