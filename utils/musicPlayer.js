@@ -36,7 +36,9 @@ async function playSong(guildId, song) {
         return;
     }
 
-    console.log(`Playing: ${song.title} | URL: ${song.url}`);
+    console.log(`Playing: ${song.title}`);
+    console.log(`URL: ${song.url}`);
+    console.log(`Song object:`, JSON.stringify(song, null, 2));
 
     try {
         const stream = await play.stream(song.url);
@@ -69,7 +71,11 @@ async function playSong(guildId, song) {
     } catch (error) {
         console.error("Error playing song:", error);
         queue.songs.shift();
-        playSong(guildId, queue.songs[0]);
+        if (queue.songs.length > 0 && queue.songs[0]?.url) {
+            playSong(guildId, queue.songs[0]);
+        } else {
+            queue.playing = false;
+        }
     }
 }
 
