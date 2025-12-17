@@ -66,11 +66,7 @@ client.on("messageCreate", (message) => {
     const haloKeywords = ["halo", "hai", "hello", "hi", "hey"];
     const content = message.content.toLowerCase();
     if (haloKeywords.some((word) => content.includes(word))) {
-        message.reply(
-            `👋 Halo ${
-                message.member?.displayName || message.author.displayName
-            }!`
-        );
+        message.reply(`👋 Halo <@${message.author.id}>!`);
         return;
     }
 
