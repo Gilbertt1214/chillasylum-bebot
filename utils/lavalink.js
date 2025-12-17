@@ -67,8 +67,8 @@ function initLavalink(client) {
     );
 
     // Player end - just log, Kazagumo handles auto-play automatically
-    kazagumo.on("playerEnd", (player, track, reason) => {
-        const trackTitle = track?.title || "Unknown";
+    kazagumo.on("playerEnd", (player, endedTrack, reason) => {
+        const trackTitle = endedTrack?.title || "Unknown";
         const endReason = reason || "finished";
         console.log(
             `⏹️ Track ended: ${trackTitle}, Reason: ${endReason}, Queue: ${player.queue.length}`
