@@ -1,16 +1,16 @@
-const { getData } = require("spotify-url-info");
+const play = require("play-dl");
 
 async function getSpotifyTrack(url) {
     try {
-        const data = await getData(url);
-
-        if (data.type === "track") {
+        // Coba pakai play-dl untuk Spotify
+        if (play.sp_validate(url) === "track") {
+            const spotifyData = await play.spotify(url);
             return {
-                title: data.name,
-                artist: data.artists.map((a) => a.name).join(", "),
-                duration: formatDuration(data.duration_ms),
-                thumbnail: data.coverArt?.sources?.[0]?.url || null,
-                query: `${data.name} ${data.artists[0].name}`,
+                title: spotifyData.name,
+                artist: spotifyData.artists.map((a) => a.name).join(", "),
+                duration: formatDuration(spotifyData.durationInMs),
+                thumbnail: spotifyData.thumbnail?.url || null,
+                query: `${spotifyData.name} ${spotifyData.artists[0].name}`,
             };
         }
         return null;
