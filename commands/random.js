@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { getKazagumo } = require("../utils/lavalink");
 const { getSpotifyRecommendations } = require("../utils/spotify");
 
-// Valid Spotify genre seeds
+// Valid Spotify genre seeds (official working seeds)
 const genreMap = {
     pop: "pop",
     hiphop: "hip-hop",
@@ -11,8 +11,6 @@ const genreMap = {
     chill: "chill",
     jazz: "jazz",
     kpop: "k-pop",
-    jpop: "j-pop",
-    rnb: "r-n-b",
     metal: "metal",
     acoustic: "acoustic",
     classical: "classical",
@@ -24,6 +22,8 @@ const genreMap = {
     dance: "dance",
     soul: "soul",
     blues: "blues",
+    rnb: "r-n-b",
+    anime: "anime",
 };
 
 const genreChoices = Object.keys(genreMap).map((g) => ({
