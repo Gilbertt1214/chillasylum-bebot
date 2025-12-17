@@ -67,8 +67,29 @@ function initLavalink(client) {
     );
 
     // Node events
-    kazagumo.shoukaku.on("ready", (name) => {
+    kazagumo.shoukaku.on("ready", async (name, reconnected) => {
         console.log(`✅ Lavalink node "${name}" connected`);
+
+        // Check if node supports Spotify (LavaSrc plugin)
+        if (!reconnected) {
+            try {
+                const testResult = await kazagumo.search(
+                    "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT",
+                    { engine: "spotify" }
+                );
+                if (testResult.tracks.length > 0) {
+                    console.log(`✅ Node "${name}" supports Spotify (LavaSrc)`);
+                } else {
+                    console.log(
+                        `⚠️ Node "${name}" does NOT support Spotify directly`
+                    );
+                }
+            } catch (e) {
+                console.log(
+                    `⚠️ Node "${name}" does NOT support Spotify directly - using YouTube fallback`
+                );
+            }
+        }
     });
 
     kazagumo.shoukaku.on("error", (name, error) => {

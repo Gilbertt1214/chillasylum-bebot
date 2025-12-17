@@ -58,11 +58,20 @@ module.exports = {
             return interaction.editReply({ embeds: [embed] });
         }
 
+        // Check if bot is already in a different voice channel
+        let player = kazagumo.players.get(interaction.guild.id);
+        if (player && player.voiceId !== voiceChannel.id) {
+            const embed = new EmbedBuilder()
+                .setColor("#ed4245")
+                .setDescription(
+                    `Bot sedang digunakan di <#${player.voiceId}>. Join channel tersebut untuk request lagu.`
+                );
+            return interaction.editReply({ embeds: [embed] });
+        }
+
         const query = interaction.options.getString("query");
 
         try {
-            let player = kazagumo.players.get(interaction.guild.id);
-
             if (!player) {
                 player = await kazagumo.createPlayer({
                     guildId: interaction.guild.id,

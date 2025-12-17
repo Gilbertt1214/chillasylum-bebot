@@ -7,6 +7,14 @@ module.exports = {
         .setDescription("Pause lagu yang sedang diputar"),
 
     async execute(interaction) {
+        const voiceChannel = interaction.member.voice.channel;
+        if (!voiceChannel) {
+            const embed = new EmbedBuilder()
+                .setColor("#ed4245")
+                .setDescription("Kamu harus join voice channel dulu!");
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
         const kazagumo = getKazagumo();
         const player = kazagumo?.players.get(interaction.guild.id);
 
@@ -17,14 +25,12 @@ module.exports = {
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
-        const currentTrack = player.queue.current;
-
-        // Check if user is the requester
-        if (currentTrack.requester?.id !== interaction.user.id) {
+        // Check if user is in the same voice channel as bot
+        if (player.voiceId !== voiceChannel.id) {
             const embed = new EmbedBuilder()
                 .setColor("#ed4245")
                 .setDescription(
-                    `Hanya <@${currentTrack.requester?.id}> yang bisa pause lagu ini.`
+                    `Kamu harus join <#${player.voiceId}> untuk control musik.`
                 );
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
