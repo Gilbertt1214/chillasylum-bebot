@@ -27,10 +27,12 @@ function parseSpotifyUrl(url) {
     const trackMatch = url.match(/track\/([a-zA-Z0-9]+)/);
     const albumMatch = url.match(/album\/([a-zA-Z0-9]+)/);
     const playlistMatch = url.match(/playlist\/([a-zA-Z0-9]+)/);
+    const artistMatch = url.match(/artist\/([a-zA-Z0-9]+)/);
 
     if (trackMatch) return { type: "track", id: trackMatch[1] };
     if (albumMatch) return { type: "album", id: albumMatch[1] };
     if (playlistMatch) return { type: "playlist", id: playlistMatch[1] };
+    if (artistMatch) return { type: "artist", id: artistMatch[1] };
     return null;
 }
 
@@ -104,6 +106,33 @@ function formatDuration(ms) {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+async function getSpotifyArtistTopTracks(artistId) {
+    await refreshToken();
+
+    try {
+        const artistData = await spotifyApi.getArtist(artistId);
+        const data = await spotifyApi.getArtistTopTracks(artistId, "ID");
+        const tracks = data.body.tracks;
+
+        return {
+            tracks: tracks.map((track) => ({
+                title: track.name,
+                artist: track.artists.map((a) => a.name).join(", "),
+                duration: formatDuration(track.duration_ms),
+                thumbnail: track.album.images[0]?.url,
+                query: `${track.name} ${track.artists[0].name}`,
+            })),
+            artistInfo: {
+                name: artistData.body.name,
+                thumbnail: artistData.body.images[0]?.url,
+            },
+        };
+    } catch (error) {
+        console.error("Spotify getArtistTopTracks error:", error);
+        return null;
+    }
+}
+
 async function getPlaylistInfo(id, type) {
     await refreshToken();
 
@@ -122,6 +151,13 @@ async function getPlaylistInfo(id, type) {
                 thumbnail: data.body.images[0]?.url,
                 owner: data.body.artists[0]?.name,
             };
+        } else if (type === "artist") {
+            const data = await spotifyApi.getArtist(id);
+            return {
+                name: `${data.body.name} - Top Tracks`,
+                thumbnail: data.body.images[0]?.url,
+                owner: data.body.name,
+            };
         }
     } catch (error) {
         console.error("Spotify getPlaylistInfo error:", error.message);
@@ -135,5 +171,6 @@ module.exports = {
     getSpotifyTrack,
     getSpotifyAlbum,
     getSpotifyPlaylist,
+    getSpotifyArtistTopTracks,
     getPlaylistInfo,
 };

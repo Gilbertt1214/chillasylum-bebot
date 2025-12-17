@@ -6,6 +6,7 @@ const {
     getSpotifyTrack,
     getSpotifyAlbum,
     getSpotifyPlaylist,
+    getSpotifyArtistTopTracks,
     getPlaylistInfo,
 } = require("../utils/spotify");
 
@@ -96,6 +97,17 @@ module.exports = {
                 } else if (parsed.type === "playlist") {
                     spotifyTracks = (await getSpotifyPlaylist(parsed.id)) || [];
                     playlistInfo = await getPlaylistInfo(parsed.id, "playlist");
+                } else if (parsed.type === "artist") {
+                    const artistData = await getSpotifyArtistTopTracks(
+                        parsed.id
+                    );
+                    if (artistData) {
+                        spotifyTracks = artistData.tracks;
+                        playlistInfo = {
+                            name: `${artistData.artistInfo.name} - Top Tracks`,
+                            thumbnail: artistData.artistInfo.thumbnail,
+                        };
+                    }
                 }
 
                 if (spotifyTracks.length === 0) {
