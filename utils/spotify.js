@@ -189,6 +189,11 @@ async function getSpotifyRecommendations(genre, limit = 10) {
             min_popularity: 30,
         });
 
+        if (!data.body.tracks || data.body.tracks.length === 0) {
+            console.log(`No recommendations found for genre: ${genre}`);
+            return null;
+        }
+
         return data.body.tracks.map((track) => ({
             title: track.name,
             artist: track.artists.map((a) => a.name).join(", "),
@@ -197,7 +202,9 @@ async function getSpotifyRecommendations(genre, limit = 10) {
             query: `${track.name} ${track.artists[0]?.name || ""}`,
         }));
     } catch (error) {
-        console.error("Spotify recommendations error:", error.message);
+        const errMsg =
+            error.body?.error?.message || error.message || "Unknown error";
+        console.error(`Spotify recommendations error for "${genre}":`, errMsg);
         return null;
     }
 }

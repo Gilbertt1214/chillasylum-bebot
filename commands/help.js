@@ -28,7 +28,7 @@ module.exports = {
                 },
                 {
                     name: "🎲 Random Genres",
-                    value: "Pop, HipHop, Rock, EDM, Lofi, Jazz, Kpop, Jpop, Indo, Chill, Workout, Sad, RnB, Metal, Acoustic, Classical, Country, Reggae, Latin, Anime",
+                    value: "Pop, HipHop, Rock, EDM, Chill, Jazz, Kpop, Jpop, RnB, Metal, Acoustic, Classical, Country, Reggae, Latin, Indie, Electronic, Dance, Soul, Blues",
                 },
                 {
                     name: "💰 Economy Commands",
