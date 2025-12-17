@@ -105,7 +105,8 @@ function initLavalink(client) {
             .setColor("#2b2d31")
             .setAuthor({
                 name: "Started playing",
-                iconURL: "https://i.imgur.com/3tZ2G8K.png",
+                iconURL:
+                    "https://tse2.mm.bing.net/th/id/OIP.NYf46d8C4pkLk6-5zW0jIwHaHa?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3",
             })
             .setDescription(
                 `**[${title}](${
