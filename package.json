@@ -8,9 +8,13 @@
         "dev": "node --watch index.js"
     },
     "dependencies": {
+        "@discordjs/voice": "^0.19.0",
         "canvas": "^3.2.0",
         "discord.js": "^14.25.1",
-        "dotenv": "^16.6.1"
+        "dotenv": "^16.6.1",
+        "play-dl": "^1.9.7",
+        "sodium-native": "^5.0.10",
+        "spotify-url-info": "^3.2.18"
     },
     "devDependencies": {
         "@eslint/js": "^9.39.2",
