@@ -1,17 +1,17 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const play = require("play-dl");
-const { getSpotifyTrack, isSpotifyUrl } = require("../utils/spotify");
+const { isSpotifyUrl } = require("../utils/spotify");
 const { getQueue } = require("../utils/musicQueue");
 const { playSong, connectToChannel } = require("../utils/musicPlayer");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("play")
-        .setDescription("Putar lagu dari Spotify atau YouTube")
+        .setDescription("Putar lagu dari YouTube atau judul lagu")
         .addStringOption((option) =>
             option
                 .setName("query")
-                .setDescription("Link Spotify/YouTube atau judul lagu")
+                .setDescription("Link YouTube atau judul lagu")
                 .setRequired(true)
         ),
 
@@ -26,26 +26,21 @@ module.exports = {
             return interaction.editReply({ embeds: [embed] });
         }
 
-        const query = interaction.options.getString("query");
-        let songInfo = null;
-        let searchQuery = query;
+        let query = interaction.options.getString("query");
 
-        // Check if Spotify URL
+        // Kalau Spotify URL, kasih tau user untuk pakai judul
         if (isSpotifyUrl(query)) {
-            const spotifyData = await getSpotifyTrack(query);
-            if (!spotifyData) {
-                const embed = new EmbedBuilder()
-                    .setColor("#ed4245")
-                    .setDescription("Gagal mengambil data dari Spotify.");
-                return interaction.editReply({ embeds: [embed] });
-            }
-            searchQuery = spotifyData.query;
-            songInfo = spotifyData;
+            const embed = new EmbedBuilder()
+                .setColor("#fee75c")
+                .setDescription(
+                    "Spotify link tidak didukung. Coba ketik judul lagunya langsung.\n\nContoh: `/play APT Bruno Mars`"
+                );
+            return interaction.editReply({ embeds: [embed] });
         }
 
         try {
             // Search on YouTube
-            const searched = await play.search(searchQuery, { limit: 1 });
+            const searched = await play.search(query, { limit: 1 });
             if (searched.length === 0) {
                 const embed = new EmbedBuilder()
                     .setColor("#ed4245")
@@ -55,10 +50,10 @@ module.exports = {
 
             const video = searched[0];
             const song = {
-                title: songInfo?.title || video.title,
-                artist: songInfo?.artist || video.channel?.name || "Unknown",
-                duration: songInfo?.duration || video.durationRaw,
-                thumbnail: songInfo?.thumbnail || video.thumbnails[0]?.url,
+                title: video.title,
+                artist: video.channel?.name || "Unknown",
+                duration: video.durationRaw,
+                thumbnail: video.thumbnails[0]?.url,
                 url: video.url,
                 requestedBy: interaction.user.id,
             };
