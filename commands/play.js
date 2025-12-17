@@ -144,7 +144,11 @@ module.exports = {
                 }
 
                 if (!player.playing && !player.paused) {
-                    player.play();
+                    try {
+                        await player.play();
+                    } catch (e) {
+                        console.error("Play error:", e.message);
+                    }
                 }
 
                 // Build track list with actual queue position
@@ -200,7 +204,11 @@ module.exports = {
 
             const isPlaying = player.playing || player.paused;
             if (!isPlaying) {
-                player.play();
+                try {
+                    await player.play();
+                } catch (e) {
+                    console.error("Play error:", e.message);
+                }
             }
 
             const embed = new EmbedBuilder()

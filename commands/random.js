@@ -197,7 +197,11 @@ module.exports = {
             }
 
             if (!player.playing && !player.paused) {
-                player.play();
+                try {
+                    await player.play();
+                } catch (e) {
+                    console.error("Play error:", e.message);
+                }
             }
 
             const trackList = addedTracks

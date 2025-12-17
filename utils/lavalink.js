@@ -10,6 +10,18 @@ const nodes = [
         auth: "youshallnotpass",
         secure: false,
     },
+    {
+        name: "Lavalink-Backup1",
+        url: "lava.link:80",
+        auth: "anything",
+        secure: false,
+    },
+    {
+        name: "Lavalink-Backup2",
+        url: "lavalink.lexnet.cc:2333",
+        auth: "lexn3tl@val!nk",
+        secure: false,
+    },
 ];
 
 let kazagumo = null;
@@ -77,19 +89,35 @@ function initLavalink(client) {
         // Skip if replaced (manual skip) or stopped
         if (reason === "replaced" || reason === "stopped") return;
 
+        // Check if player still exists
+        const guildId = player.guildId;
+        const existingPlayer = kazagumo.players.get(guildId);
+        if (!existingPlayer) return;
+
         // Auto play next track if queue has songs
-        if (player.queue.length > 0) {
+        if (existingPlayer.queue.length > 0) {
             console.log(`📋 Playing next track...`);
             try {
-                await player.play();
+                await existingPlayer.play();
             } catch (e) {
-                console.error("Auto-play error:", e);
+                console.error("Auto-play error:", e.message);
+                // Try to skip to next if play fails
+                if (existingPlayer.queue.length > 0) {
+                    existingPlayer.queue.shift();
+                    if (existingPlayer.queue.length > 0) {
+                        try {
+                            await existingPlayer.play();
+                        } catch (e2) {
+                            console.error("Retry play error:", e2.message);
+                        }
+                    }
+                }
             }
             return;
         }
 
         // Queue empty
-        const textChannel = player.data.get("textChannel");
+        const textChannel = existingPlayer.data.get("textChannel");
         if (textChannel) {
             const embed = new EmbedBuilder()
                 .setColor("#2b2d31")
@@ -178,15 +206,20 @@ function initLavalink(client) {
 
     // Player empty - Auto disconnect
     kazagumo.on("playerEmpty", (player) => {
+        const guildId = player.guildId;
+
         const timeoutId = setTimeout(() => {
-            // Double check player still exists and is empty
+            // Check if player still exists in kazagumo
+            const existingPlayer = kazagumo.players.get(guildId);
+            if (!existingPlayer) return; // Player already destroyed
+
+            // Double check player is empty
             if (
-                player &&
-                !player.queue.length &&
-                !player.playing &&
-                !player.paused
+                !existingPlayer.queue.length &&
+                !existingPlayer.playing &&
+                !existingPlayer.paused
             ) {
-                const textChannel = player.data.get("textChannel");
+                const textChannel = existingPlayer.data.get("textChannel");
                 if (textChannel) {
                     const embed = new EmbedBuilder()
                         .setColor("#2b2d31")
@@ -195,9 +228,9 @@ function initLavalink(client) {
                 }
 
                 try {
-                    player.destroy();
+                    existingPlayer.destroy();
                 } catch (e) {
-                    console.error("Error destroying player:", e.message);
+                    // Ignore if already destroyed
                 }
             }
         }, 300000); // 5 menit

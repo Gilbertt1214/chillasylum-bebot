@@ -35,13 +35,20 @@ module.exports = {
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
+        const skippedTrack = player.queue.current;
         const nextTrack = player.queue[0];
 
-        player.skip();
+        try {
+            player.skip();
+        } catch (e) {
+            console.error("Skip error:", e);
+        }
 
         const embed = new EmbedBuilder()
             .setColor("#5865f2")
-            .setDescription(`⏭️ Skipped **${skipped.title}**`);
+            .setDescription(
+                `⏭️ Skipped **${skippedTrack?.title || "Unknown"}**`
+            );
 
         if (nextTrack) {
             embed.addFields({

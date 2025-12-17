@@ -8,14 +8,17 @@ const spotifyApi = new SpotifyWebApi({
 let tokenExpiry = 0;
 
 async function refreshToken() {
-    if (Date.now() < tokenExpiry) return;
+    if (Date.now() < tokenExpiry) return true;
 
     try {
         const data = await spotifyApi.clientCredentialsGrant();
         spotifyApi.setAccessToken(data.body.access_token);
         tokenExpiry = Date.now() + (data.body.expires_in - 60) * 1000;
+        console.log("✅ Spotify token refreshed");
+        return true;
     } catch (error) {
-        console.error("Spotify token error:", error);
+        console.error("Spotify token error:", error.message);
+        return false;
     }
 }
 
@@ -37,7 +40,8 @@ function parseSpotifyUrl(url) {
 }
 
 async function getSpotifyTrack(trackId) {
-    await refreshToken();
+    const tokenOk = await refreshToken();
+    if (!tokenOk) return null;
 
     try {
         const data = await spotifyApi.getTrack(trackId);
@@ -48,16 +52,17 @@ async function getSpotifyTrack(trackId) {
             artist: track.artists.map((a) => a.name).join(", "),
             duration: formatDuration(track.duration_ms),
             thumbnail: track.album.images[0]?.url,
-            query: `${track.name} ${track.artists[0].name}`,
+            query: `${track.name} ${track.artists[0]?.name || ""}`,
         };
     } catch (error) {
-        console.error("Spotify getTrack error:", error);
+        console.error("Spotify getTrack error:", error.message);
         return null;
     }
 }
 
 async function getSpotifyAlbum(albumId) {
-    await refreshToken();
+    const tokenOk = await refreshToken();
+    if (!tokenOk) return null;
 
     try {
         const data = await spotifyApi.getAlbumTracks(albumId, { limit: 50 });
@@ -69,33 +74,38 @@ async function getSpotifyAlbum(albumId) {
             artist: track.artists.map((a) => a.name).join(", "),
             duration: formatDuration(track.duration_ms),
             thumbnail: albumInfo.body.images[0]?.url,
-            query: `${track.name} ${track.artists[0].name}`,
+            query: `${track.name} ${track.artists[0]?.name || ""}`,
         }));
     } catch (error) {
-        console.error("Spotify getAlbum error:", error);
+        console.error("Spotify getAlbum error:", error.message);
         return null;
     }
 }
 
 async function getSpotifyPlaylist(playlistId) {
-    await refreshToken();
+    const tokenOk = await refreshToken();
+    if (!tokenOk) return null;
 
     try {
         const data = await spotifyApi.getPlaylistTracks(playlistId, {
-            limit: 50,
+            limit: 100,
         });
         const playlistInfo = await spotifyApi.getPlaylist(playlistId);
-        const tracks = data.body.items.filter((item) => item.track);
+        const tracks = data.body.items.filter(
+            (item) => item.track && item.track.name
+        );
 
         return tracks.map((item) => ({
             title: item.track.name,
             artist: item.track.artists.map((a) => a.name).join(", "),
             duration: formatDuration(item.track.duration_ms),
-            thumbnail: playlistInfo.body.images[0]?.url,
-            query: `${item.track.name} ${item.track.artists[0].name}`,
+            thumbnail:
+                playlistInfo.body.images[0]?.url ||
+                item.track.album?.images[0]?.url,
+            query: `${item.track.name} ${item.track.artists[0]?.name || ""}`,
         }));
     } catch (error) {
-        console.error("Spotify getPlaylist error:", error);
+        console.error("Spotify getPlaylist error:", error.message);
         return null;
     }
 }
@@ -107,7 +117,8 @@ function formatDuration(ms) {
 }
 
 async function getSpotifyArtistTopTracks(artistId) {
-    await refreshToken();
+    const tokenOk = await refreshToken();
+    if (!tokenOk) return null;
 
     try {
         const artistData = await spotifyApi.getArtist(artistId);
@@ -120,7 +131,7 @@ async function getSpotifyArtistTopTracks(artistId) {
                 artist: track.artists.map((a) => a.name).join(", "),
                 duration: formatDuration(track.duration_ms),
                 thumbnail: track.album.images[0]?.url,
-                query: `${track.name} ${track.artists[0].name}`,
+                query: `${track.name} ${track.artists[0]?.name || ""}`,
             })),
             artistInfo: {
                 name: artistData.body.name,
@@ -128,13 +139,14 @@ async function getSpotifyArtistTopTracks(artistId) {
             },
         };
     } catch (error) {
-        console.error("Spotify getArtistTopTracks error:", error);
+        console.error("Spotify getArtistTopTracks error:", error.message);
         return null;
     }
 }
 
 async function getPlaylistInfo(id, type) {
-    await refreshToken();
+    const tokenOk = await refreshToken();
+    if (!tokenOk) return null;
 
     try {
         if (type === "playlist") {

@@ -42,7 +42,15 @@ module.exports = {
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
-        player.pause(false);
+        try {
+            player.pause(false);
+        } catch (e) {
+            console.error("Resume error:", e);
+            const embed = new EmbedBuilder()
+                .setColor("#ed4245")
+                .setDescription("Gagal resume lagu.");
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
 
         const embed = new EmbedBuilder()
             .setColor("#1DB954")

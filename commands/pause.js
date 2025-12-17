@@ -42,7 +42,15 @@ module.exports = {
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
-        player.pause(true);
+        try {
+            player.pause(true);
+        } catch (e) {
+            console.error("Pause error:", e);
+            const embed = new EmbedBuilder()
+                .setColor("#ed4245")
+                .setDescription("Gagal pause lagu.");
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
 
         const embed = new EmbedBuilder()
             .setColor("#fee75c")

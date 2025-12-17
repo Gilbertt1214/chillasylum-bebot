@@ -92,11 +92,28 @@ client.on("messageCreate", (message) => {
 
 // Handle error
 client.on("error", (error) => {
-    console.error("Client error:", error);
+    console.error("Client error:", error.message);
 });
 
-process.on("unhandledRejection", (reason, promise) => {
+process.on("unhandledRejection", (reason) => {
     console.error("Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error.message);
+});
+
+// Graceful shutdown
+process.on("SIGINT", () => {
+    console.log("🛑 Shutting down...");
+    client.destroy();
+    process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+    console.log("🛑 Shutting down...");
+    client.destroy();
+    process.exit(0);
 });
 
 // Init Lavalink

@@ -35,11 +35,15 @@ module.exports = {
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
-        player.destroy();
+        try {
+            player.destroy();
+        } catch (e) {
+            console.error("Stop error:", e);
+        }
 
         const embed = new EmbedBuilder()
             .setColor("#ed4245")
-            .setDescription(" Musik dihentikan dan queue di-clear.");
+            .setDescription("⏹️ Musik dihentikan dan queue di-clear.");
         return interaction.reply({ embeds: [embed] });
     },
 };
