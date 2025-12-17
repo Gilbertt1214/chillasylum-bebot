@@ -158,7 +158,7 @@ module.exports = {
 
                 const embed = new EmbedBuilder()
                     .setColor("#1DB954")
-                    .setAuthor({ name: "🎵 Added to Queue" })
+                    .setAuthor({ name: "Added to Queue" })
                     .setTitle(playlistInfo?.name || "Playlist")
                     .setURL(query)
                     .setDescription(`${trackList}${moreText}`)
@@ -197,7 +197,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor("#1DB954")
                 .setAuthor({
-                    name: isPlaying ? "🎵 Added to Queue" : "🎵 Now Playing",
+                    name: isPlaying ? " Added to Queue" : "🎵 Now Playing",
                 })
                 .setTitle(truncate(track.title, 50))
                 .setURL(track.uri)
