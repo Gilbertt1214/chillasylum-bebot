@@ -38,7 +38,7 @@ module.exports = {
         try {
             // Stop playing and clear queue, but keep bot in voice channel
             player.queue.clear();
-            player.stopTrack();
+            player.shoukaku.stopTrack();
         } catch (e) {
             console.error("Stop error:", e);
         }
