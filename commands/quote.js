@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
-// Fallback quotes jika API gagal
+
 const fallbackQuotes = [
     {
         text: "Hidup ini seperti sepeda. Agar tetap seimbang, kamu harus terus bergerak.",

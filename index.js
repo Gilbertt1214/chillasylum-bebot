@@ -58,13 +58,80 @@ for (const file of eventFiles) {
     }
 }
 
+// Bad words filter (kata kasar Indonesia)
+const badWords = [
+    "anjing",
+    "anjg",
+    "anjir",
+    "ajg",
+    "anj",
+    "bangsat",
+    "bgst",
+    "bngst",
+    "kontol",
+    "kntl",
+    "memek",
+    "mmk",
+    "mbud",
+    "kentot",
+    "goblok",
+    "goblog",
+    "gblk",
+    "tolol",
+    "tll",
+    "bego",
+    "bodoh",
+    "idiot",
+    "tai",
+    "taik",
+    "tahi",
+    "kampret",
+    "kmprt",
+    "bajingan",
+    "bjngn",
+    "setan",
+    "iblis",
+    "babi",
+    "monyet",
+    "pepek",
+    "ngentot",
+    "ngewe",
+    "asu",
+    "jancok",
+    "jancuk",
+    "cok",
+];
+
 // Handle messages
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
+    const content = message.content.toLowerCase();
+
+    // Check for bad words mentioning bot
+    const mentionsBot =
+        message.mentions.has(client.user) ||
+        content.includes("bot") ||
+        content.includes("bebot");
+
+    if (mentionsBot) {
+        const hasBadWord = badWords.some((word) => content.includes(word));
+        if (hasBadWord) {
+            const warnings = [
+                `Hei <@${message.author.id}>, tolong jaga omonganmu ya memek`,
+                `<@${message.author.id}> Ehh, mulutnya kaya ga di sekolahin`,
+                `<@${message.author.id}> pepek so asik kentot`,
+                `Sabar <@${message.author.id}>, dek `,
+            ];
+            const randomWarning =
+                warnings[Math.floor(Math.random() * warnings.length)];
+            message.reply(randomWarning);
+            return;
+        }
+    }
+
     // Respon halo
     const haloKeywords = ["halo", "hai", "hello", "hi", "hey"];
-    const content = message.content.toLowerCase();
     if (haloKeywords.some((word) => content.includes(word))) {
         message.reply(`👋 Halo <@${message.author.id}>!`);
         return;
