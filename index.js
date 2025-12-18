@@ -95,6 +95,7 @@ const badWords = [
     "monyet",
     "pepek",
     "ngentot",
+    "najis",
     "ngewe",
     "asu",
     "jancok",
