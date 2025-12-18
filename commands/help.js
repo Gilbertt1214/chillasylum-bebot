@@ -18,17 +18,18 @@ module.exports = {
                     name: "🎵 Music Commands",
                     value: [
                         "`/play` - Putar lagu dari Spotify/YouTube",
-                        "`/random` - Play random musik by genre (Spotify)",
+                        "`/random` - Play random musik by genre",
                         "`/skip` - Skip lagu yang sedang diputar",
                         "`/stop` - Stop musik dan keluar dari VC",
                         "`/pause` - Pause lagu",
                         "`/resume` - Lanjutkan lagu yang di-pause",
                         "`/queue` - Lihat antrian lagu",
+                        "`/lyrics` - Lirik lagu yang sedang diputar",
                     ].join("\n"),
                 },
                 {
                     name: "🎲 Random Genres",
-                    value: "Pop, HipHop, Rock, EDM, Chill, Jazz, Kpop, Jpop, RnB, Metal, Acoustic, Classical, Country, Reggae, Latin, Indie, Electronic, Dance, Soul, Blues",
+                    value: "Pop, HipHop, Rock, EDM, Jazz, Kpop, Metal, Acoustic, Classical, Indie, RnB, Lofi",
                 },
                 {
                     name: "💰 Economy Commands",
@@ -47,6 +48,7 @@ module.exports = {
                         "`/userinfo` - Info tentang user",
                         "`/ship` - Cek kecocokan 2 orang",
                         "`/kerangajaib` - Tanya kerang ajaib",
+                        "`/quote` - Random quote inspiratif",
                     ].join("\n"),
                 },
                 {
