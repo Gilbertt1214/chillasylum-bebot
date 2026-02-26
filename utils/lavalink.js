@@ -63,7 +63,7 @@ function initLavalink(client) {
             resumableTimeout: 30,
             reconnectTries: 5,
             restTimeout: 60000,
-        }
+        },
     );
 
     // Player end - just log, Kazagumo handles auto-play automatically
@@ -71,7 +71,7 @@ function initLavalink(client) {
         const trackTitle = endedTrack?.title || "Unknown";
         const endReason = reason || "finished";
         console.log(
-            `⏹️ Track ended: ${trackTitle}, Reason: ${endReason}, Queue: ${player.queue.length}`
+            `⏹️ Track ended: ${trackTitle}, Reason: ${endReason}, Queue: ${player.queue.length}`,
         );
     });
 
@@ -84,18 +84,18 @@ function initLavalink(client) {
             try {
                 const testResult = await kazagumo.search(
                     "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT",
-                    { engine: "spotify" }
+                    { engine: "spotify" },
                 );
                 if (testResult.tracks.length > 0) {
                     console.log(`✅ Node "${name}" supports Spotify (LavaSrc)`);
                 } else {
                     console.log(
-                        `⚠️ Node "${name}" does NOT support Spotify directly`
+                        `⚠️ Node "${name}" does NOT support Spotify directly`,
                     );
                 }
             } catch (e) {
                 console.log(
-                    `⚠️ Node "${name}" does NOT support Spotify directly - using YouTube fallback`
+                    `⚠️ Node "${name}" does NOT support Spotify directly - using YouTube fallback`,
                 );
             }
         }
@@ -109,13 +109,13 @@ function initLavalink(client) {
         console.log(
             `⚠️ Lavalink node "${name}" closed: ${code} - ${
                 reason || "No reason"
-            }`
+            }`,
         );
     });
 
     kazagumo.shoukaku.on("disconnect", (name, players, moved) => {
         console.log(
-            `🔌 Lavalink node "${name}" disconnected. Players: ${players.length}, Moved: ${moved}`
+            `🔌 Lavalink node "${name}" disconnected. Players: ${players.length}, Moved: ${moved}`,
         );
     });
 
@@ -156,7 +156,7 @@ function initLavalink(client) {
                 iconURL: sourceIcon,
             })
             .setDescription(
-                `**[${title}](${uri || "#"})**\nby ${artist} • \`${duration}\``
+                `**[${title}](${uri || "#"})**\nby ${artist} • \`${duration}\``,
             )
             .setFooter({
                 text: `Requested by ${requester?.username || "Unknown"}`,
@@ -166,14 +166,26 @@ function initLavalink(client) {
         safeSend(textChannel, embed);
     });
 
-    // Player empty - Auto disconnect
+    // Player empty - Auto disconnect (unless stay mode)
     kazagumo.on("playerEmpty", (player) => {
         const guildId = player.guildId;
+
+        // Check if stay mode is enabled
+        const stayMode = player.data.get("stayMode");
+        if (stayMode) {
+            console.log(
+                `🔒 Stay mode enabled for guild ${guildId} - not disconnecting`,
+            );
+            return;
+        }
 
         const timeoutId = setTimeout(() => {
             // Check if player still exists in kazagumo
             const existingPlayer = kazagumo.players.get(guildId);
             if (!existingPlayer) return; // Player already destroyed
+
+            // Check stay mode again
+            if (existingPlayer.data.get("stayMode")) return;
 
             // Double check player is empty
             if (
@@ -220,7 +232,7 @@ function initLavalink(client) {
             const embed = new EmbedBuilder()
                 .setColor("#ed4245")
                 .setDescription(
-                    "An error occurred while playing. Skipping to next track..."
+                    "An error occurred while playing. Skipping to next track...",
                 );
             safeSend(textChannel, embed);
         }
