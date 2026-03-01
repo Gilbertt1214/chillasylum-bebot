@@ -2,13 +2,25 @@ const { Kazagumo } = require("kazagumo");
 const { Connectors } = require("shoukaku");
 const { EmbedBuilder } = require("discord.js");
 
-// Lavalink node - single reliable node
+// Lavalink nodes - multiple nodes for reliability
 const nodes = [
     {
         name: "Lavalink-Main",
+        url: "lavalinkv4.serenetia.com:443",
+        auth: "https://dsc.gg/ajidevserver",
+        secure: true,
+    },
+    {
+        name: "Lavalink-Fallback1",
         url: "lavalink.jirayu.net:13592",
         auth: "youshallnotpass",
         secure: false,
+    },
+    {
+        name: "Lavalink-Fallback2",
+        url: "lava-v4.ajieblogs.eu.org:443",
+        auth: "https://dsc.gg/ajidevserver",
+        secure: true,
     },
 ];
 
@@ -61,7 +73,7 @@ function initLavalink(client) {
             moveOnDisconnect: false,
             resumable: false,
             resumableTimeout: 30,
-            reconnectTries: 5,
+            reconnectTries: 10,
             restTimeout: 60000,
         },
     );

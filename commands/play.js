@@ -58,6 +58,17 @@ module.exports = {
             return interaction.editReply({ embeds: [embed] });
         }
 
+        // Check if any Lavalink node is connected
+        const activeNodes = kazagumo.shoukaku.nodes?.size || 0;
+        if (activeNodes === 0) {
+            const embed = new EmbedBuilder()
+                .setColor("#ed4245")
+                .setDescription(
+                    "Tidak ada server musik yang terhubung saat ini. Bot sedang mencoba reconnect, coba lagi dalam beberapa detik."
+                );
+            return interaction.editReply({ embeds: [embed] });
+        }
+
         // Check if bot is already in a different voice channel
         let player = kazagumo.players.get(interaction.guild.id);
 
@@ -261,10 +272,48 @@ module.exports = {
 
             return interaction.editReply({ embeds: [embed] });
         } catch (error) {
-            console.error("Play error:", error);
+            console.error("Play error:", error?.message || error);
+            console.error("Play error stack:", error?.stack);
+
+            // Determine specific error message
+            let errorMsg = "Terjadi error saat memutar lagu.";
+            const errStr = (error?.message || "").toLowerCase();
+
+            if (
+                errStr.includes("no available node") ||
+                errStr.includes("no node") ||
+                errStr.includes("connection") ||
+                errStr.includes("connect")
+            ) {
+                errorMsg =
+                    "Tidak ada server musik yang tersedia saat ini. Coba lagi dalam beberapa detik.";
+            } else if (
+                errStr.includes("load failed") ||
+                errStr.includes("no matches") ||
+                errStr.includes("not found")
+            ) {
+                errorMsg =
+                    "Gagal memuat lagu. Coba gunakan judul yang lebih spesifik atau link langsung.";
+            } else if (
+                errStr.includes("timed out") ||
+                errStr.includes("timeout")
+            ) {
+                errorMsg =
+                    "Koneksi ke server musik timeout. Coba lagi nanti.";
+            } else if (
+                errStr.includes("4xx") ||
+                errStr.includes("forbidden") ||
+                errStr.includes("blocked")
+            ) {
+                errorMsg =
+                    "Lagu ini tidak bisa diputar (mungkin di-block oleh sumbernya).";
+            }
+
             const embed = new EmbedBuilder()
                 .setColor("#ed4245")
-                .setDescription("Terjadi error saat memutar lagu.");
+                .setDescription(
+                    `${errorMsg}\n\`\`\`${error?.message || "Unknown error"}\`\`\``
+                );
             return interaction.editReply({ embeds: [embed] });
         }
     },
