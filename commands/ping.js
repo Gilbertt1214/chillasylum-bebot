@@ -11,7 +11,7 @@ module.exports = {
 
         // Kirim reply awal
         const msg = await interaction.reply({
-            content: "Menghitung ping...",
+            content: "🏓 Menghitung ping...",
             fetchReply: true,
         });
 
@@ -27,8 +27,9 @@ module.exports = {
         // Edit pesan dengan hasil
         await interaction.editReply({
             content: `🏓 Pong!
-        Latency Bot: ${latency.toFixed(2)} ms
-        API Ping: ${apiPing} ms`,
+
+    Latency Bot: ${latency.toFixed(2)} ms
+    API Ping: ${apiPing} ms`,
         });
     },
 };
