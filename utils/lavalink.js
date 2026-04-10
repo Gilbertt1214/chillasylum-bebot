@@ -2,21 +2,51 @@ const { Kazagumo } = require("kazagumo");
 const { Connectors } = require("shoukaku");
 const { EmbedBuilder } = require("discord.js");
 
-// Lavalink nodes - AjieDev official v4 nodes (https://github.com/AjieDev/Free-Lavalink)
-const nodes = [
-    {
-        name: "Lavalink-Main",
-        url: "lavalinkv4.serenetia.com:443",
-        auth: "https://dsc.gg/ajidevserver",
-        secure: true,
-    },
-    {
-        name: "Lavalink-Fallback",
-        url: "lavalinkv4.serenetia.com:80",
-        auth: "https://dsc.gg/ajidevserver",
-        secure: false,
-    },
-];
+// Load Lavalink nodes from environment variables
+const nodes = [];
+
+// Main node
+if (process.env.LAVALINK_MAIN_URL) {
+    nodes.push({
+        name: process.env.LAVALINK_MAIN_NAME || "Lavalink-Main",
+        url: process.env.LAVALINK_MAIN_URL,
+        auth: process.env.LAVALINK_MAIN_AUTH || "youshallnotpass",
+        secure: process.env.LAVALINK_MAIN_SECURE === "true",
+    });
+}
+
+// Fallback node
+if (process.env.LAVALINK_FALLBACK_URL) {
+    nodes.push({
+        name: process.env.LAVALINK_FALLBACK_NAME || "Lavalink-Fallback",
+        url: process.env.LAVALINK_FALLBACK_URL,
+        auth: process.env.LAVALINK_FALLBACK_AUTH || "youshallnotpass",
+        secure: process.env.LAVALINK_FALLBACK_SECURE === "true",
+    });
+}
+
+// Fallback to default nodes if no env vars set
+if (nodes.length === 0) {
+    console.warn(
+        "⚠️ No Lavalink nodes configured in .env, using default nodes",
+    );
+    nodes.push(
+        {
+            name: "Lavalink-Main",
+            url: "lavalinkv4.serenetia.com:443",
+            auth: "https://dsc.gg/ajidevserver",
+            secure: true,
+        },
+        {
+            name: "Lavalink-Fallback",
+            url: "lavalinkv4.serenetia.com:80",
+            auth: "https://dsc.gg/ajidevserver",
+            secure: false,
+        },
+    );
+}
+
+console.log(`🎵 Loaded ${nodes.length} Lavalink node(s) from configuration`);
 
 let kazagumo = null;
 

@@ -73,7 +73,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor("#1DB954")
-            .setDescription("▶️ Lagu dilanjutkan.");
+            .setDescription("Lagu dilanjutkan.");
         return interaction.reply({ embeds: [embed] });
     },
 };

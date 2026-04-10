@@ -17,7 +17,16 @@ async function refreshToken() {
         console.log("✅ Spotify token refreshed");
         return true;
     } catch (error) {
-        console.error("Spotify token error:", error.message);
+        let errMsg = "Unknown error";
+        if (error.body?.error?.message) {
+            errMsg = error.body.error.message;
+        } else if (error.message) {
+            errMsg = error.message;
+        }
+        console.error("❌ Spotify token error:", errMsg);
+        console.error(
+            "Check your SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in .env file",
+        );
         return false;
     }
 }
@@ -44,7 +53,7 @@ async function getSpotifyTrack(trackId) {
     if (!tokenOk) return null;
 
     try {
-        const data = await spotifyApi.getTrack(trackId);
+        const data = await spotifyApi.getTrack(trackId, { market: "ID" });
         const track = data.body;
 
         return {
@@ -55,7 +64,14 @@ async function getSpotifyTrack(trackId) {
             query: `${track.name} ${track.artists[0]?.name || ""}`,
         };
     } catch (error) {
-        console.error("Spotify getTrack error:", error.message);
+        // Extract meaningful error message
+        let errMsg = "Unknown error";
+        if (error.body?.error?.message) {
+            errMsg = error.body.error.message;
+        } else if (error.message) {
+            errMsg = error.message;
+        }
+        console.error(`❌ Spotify getTrack error for ID ${trackId}: ${errMsg}`);
         return null;
     }
 }
@@ -65,8 +81,11 @@ async function getSpotifyAlbum(albumId) {
     if (!tokenOk) return null;
 
     try {
-        const data = await spotifyApi.getAlbumTracks(albumId, { limit: 50 });
-        const albumInfo = await spotifyApi.getAlbum(albumId);
+        const data = await spotifyApi.getAlbumTracks(albumId, {
+            limit: 50,
+            market: "ID",
+        });
+        const albumInfo = await spotifyApi.getAlbum(albumId, { market: "ID" });
         const tracks = data.body.items;
 
         return tracks.map((track) => ({
@@ -77,23 +96,43 @@ async function getSpotifyAlbum(albumId) {
             query: `${track.name} ${track.artists[0]?.name || ""}`,
         }));
     } catch (error) {
-        console.error("Spotify getAlbum error:", error.message);
+        let errMsg = "Unknown error";
+        if (error.body?.error?.message) {
+            errMsg = error.body.error.message;
+        } else if (error.message) {
+            errMsg = error.message;
+        }
+        console.error(`❌ Spotify getAlbum error for ID ${albumId}: ${errMsg}`);
         return null;
     }
 }
 
 async function getSpotifyPlaylist(playlistId) {
     const tokenOk = await refreshToken();
-    if (!tokenOk) return null;
+    if (!tokenOk) {
+        console.error("❌ Cannot get Spotify playlist - token refresh failed");
+        return null;
+    }
 
     try {
+        // Try to get playlist info first to check if accessible
+        const playlistInfo = await spotifyApi.getPlaylist(playlistId, {
+            market: "ID",
+        });
+
         const data = await spotifyApi.getPlaylistTracks(playlistId, {
             limit: 100,
+            market: "ID",
         });
-        const playlistInfo = await spotifyApi.getPlaylist(playlistId);
+
         const tracks = data.body.items.filter(
-            (item) => item.track && item.track.name
+            (item) => item.track && item.track.name,
         );
+
+        if (tracks.length === 0) {
+            console.log(`⚠️ Playlist ${playlistId} has no playable tracks`);
+            return null;
+        }
 
         return tracks.map((item) => ({
             title: item.track.name,
@@ -105,7 +144,34 @@ async function getSpotifyPlaylist(playlistId) {
             query: `${item.track.name} ${item.track.artists[0]?.name || ""}`,
         }));
     } catch (error) {
-        console.error("Spotify getPlaylist error:", error.message);
+        let errMsg = "Unknown error";
+        let statusCode = null;
+
+        if (error.statusCode) {
+            statusCode = error.statusCode;
+        }
+
+        if (error.body?.error?.message) {
+            errMsg = error.body.error.message;
+        } else if (error.message) {
+            errMsg = error.message;
+        }
+
+        console.error(
+            `❌ Spotify getPlaylist error for ID ${playlistId}:`,
+            statusCode ? `[${statusCode}]` : "",
+            errMsg,
+        );
+
+        // Log more details for debugging
+        if (statusCode === 404) {
+            console.error("   → Playlist not found or has been deleted");
+        } else if (statusCode === 403 || statusCode === 401) {
+            console.error(
+                "   → Access denied - playlist might be private or credentials invalid",
+            );
+        }
+
         return null;
     }
 }
@@ -139,7 +205,15 @@ async function getSpotifyArtistTopTracks(artistId) {
             },
         };
     } catch (error) {
-        console.error("Spotify getArtistTopTracks error:", error.message);
+        let errMsg = "Unknown error";
+        if (error.body?.error?.message) {
+            errMsg = error.body.error.message;
+        } else if (error.message) {
+            errMsg = error.message;
+        }
+        console.error(
+            `❌ Spotify getArtistTopTracks error for ID ${artistId}: ${errMsg}`,
+        );
         return null;
     }
 }
@@ -150,14 +224,14 @@ async function getPlaylistInfo(id, type) {
 
     try {
         if (type === "playlist") {
-            const data = await spotifyApi.getPlaylist(id);
+            const data = await spotifyApi.getPlaylist(id, { market: "ID" });
             return {
                 name: data.body.name,
                 thumbnail: data.body.images[0]?.url,
                 owner: data.body.owner.display_name,
             };
         } else if (type === "album") {
-            const data = await spotifyApi.getAlbum(id);
+            const data = await spotifyApi.getAlbum(id, { market: "ID" });
             return {
                 name: data.body.name,
                 thumbnail: data.body.images[0]?.url,
@@ -172,7 +246,15 @@ async function getPlaylistInfo(id, type) {
             };
         }
     } catch (error) {
-        console.error("Spotify getPlaylistInfo error:", error.message);
+        let errMsg = "Unknown error";
+        if (error.body?.error?.message) {
+            errMsg = error.body.error.message;
+        } else if (error.message) {
+            errMsg = error.message;
+        }
+        console.error(
+            `❌ Spotify getPlaylistInfo error for ID ${id} (${type}): ${errMsg}`,
+        );
         return null;
     }
 }
