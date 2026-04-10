@@ -89,8 +89,6 @@ function initLavalink(client) {
 
     // Node events
     kazagumo.shoukaku.on("ready", async (name, reconnected) => {
-        console.log(`✅ Lavalink node "${name}" connected`);
-
         // Check if node supports Spotify (LavaSrc plugin)
         if (!reconnected) {
             try {
@@ -99,7 +97,6 @@ function initLavalink(client) {
                     { engine: "spotify" },
                 );
                 if (testResult.tracks.length > 0) {
-                    console.log(`✅ Node "${name}" supports Spotify (LavaSrc)`);
                 } else {
                     console.log(
                         `⚠️ Node "${name}" does NOT support Spotify directly`,
@@ -133,7 +130,7 @@ function initLavalink(client) {
 
     // Player start - Now Playing log
     kazagumo.on("playerStart", (player, track) => {
-        console.log(`▶️ Playing: ${track?.title || "Unknown"}`);
+        console.log(`Bermain: ${track?.title || "Unknown"}`);
 
         const textChannel = player.data.get("textChannel");
         if (!textChannel || !track) return;

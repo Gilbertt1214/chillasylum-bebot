@@ -81,7 +81,9 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        await interaction.deferReply();
+        if (!interaction.deferred && !interaction.replied) {
+            await interaction.deferReply();
+        }
 
         const voiceChannel = interaction.member.voice.channel;
         if (!voiceChannel) {

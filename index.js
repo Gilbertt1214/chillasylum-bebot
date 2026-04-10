@@ -31,7 +31,6 @@ for (const file of commandFiles) {
     // Slash commands
     if ("data" in command && "execute" in command && !command.prefix) {
         client.commands.set(command.data.name, command);
-        console.log(`✅ Slash Command loaded: /${command.data.name}`);
     }
     // Prefix commands
     else if (command.prefix && "name" in command && "execute" in command) {
@@ -51,10 +50,8 @@ for (const file of eventFiles) {
     const event = require(filePath);
     if (event.once) {
         client.once(event.name, (...args) => event.execute(...args));
-        console.log(`✅ Event loaded (once): ${event.name}`);
     } else {
         client.on(event.name, (...args) => event.execute(...args));
-        console.log(`✅ Event loaded: ${event.name}`);
     }
 }
 
