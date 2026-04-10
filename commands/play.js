@@ -28,6 +28,47 @@ function formatDuration(ms) {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+// Helper: create player with retry (handles Bad Request from unstable nodes)
+async function createPlayerWithRetry(kazagumo, options, maxRetries = 2) {
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            if (attempt > 0) {
+                // Clean up stale connections before retry
+                try {
+                    const conn = kazagumo.shoukaku.connections.get(
+                        options.guildId
+                    );
+                    if (conn) {
+                        conn.disconnect();
+                        kazagumo.shoukaku.connections.delete(options.guildId);
+                    }
+                    kazagumo.shoukaku.players.delete(options.guildId);
+                    kazagumo.players.delete(options.guildId);
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
+                // Wait before retry (increasing delay)
+                await new Promise((r) => setTimeout(r, 1500 * attempt));
+                console.log(
+                    `\uD83D\uDD04 Retry createPlayer attempt ${attempt + 1}/${maxRetries} for guild ${options.guildId}`
+                );
+            }
+            const player = await kazagumo.createPlayer(options);
+            // Small delay to let voice connection fully stabilize
+            await new Promise((r) => setTimeout(r, 500));
+            return player;
+        } catch (error) {
+            lastError = error;
+            console.error(
+                `\u274C createPlayer attempt ${attempt + 1} failed:`,
+                error.message
+            );
+        }
+    }
+    throw lastError;
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("play")
@@ -95,7 +136,7 @@ module.exports = {
 
         try {
             if (!player) {
-                player = await kazagumo.createPlayer({
+                player = await createPlayerWithRetry(kazagumo, {
                     guildId: interaction.guild.id,
                     textId: interaction.channel.id,
                     voiceId: voiceChannel.id,
@@ -300,6 +341,12 @@ module.exports = {
             ) {
                 errorMsg =
                     "Koneksi ke server musik timeout. Coba lagi nanti.";
+            } else if (
+                errStr.includes("bad request") ||
+                errStr.includes("response code: 400")
+            ) {
+                errorMsg =
+                    "Server musik menolak request (Bad Request). Coba lagi dalam beberapa detik.";
             } else if (
                 errStr.includes("4xx") ||
                 errStr.includes("forbidden") ||

@@ -2,7 +2,7 @@ const { Kazagumo } = require("kazagumo");
 const { Connectors } = require("shoukaku");
 const { EmbedBuilder } = require("discord.js");
 
-// Lavalink nodes - multiple nodes for reliability
+// Lavalink nodes - AjieDev official v4 nodes (https://github.com/AjieDev/Free-Lavalink)
 const nodes = [
     {
         name: "Lavalink-Main",
@@ -11,16 +11,10 @@ const nodes = [
         secure: true,
     },
     {
-        name: "Lavalink-Fallback1",
-        url: "lavalink.jirayu.net:13592",
-        auth: "youshallnotpass",
-        secure: false,
-    },
-    {
-        name: "Lavalink-Fallback2",
-        url: "lava-v4.ajieblogs.eu.org:443",
+        name: "Lavalink-Fallback",
+        url: "lavalinkv4.serenetia.com:80",
         auth: "https://dsc.gg/ajidevserver",
-        secure: true,
+        secure: false,
     },
 ];
 
@@ -71,10 +65,16 @@ function initLavalink(client) {
         nodes,
         {
             moveOnDisconnect: false,
-            resumable: false,
-            resumableTimeout: 30,
+            resume: false,
             reconnectTries: 10,
-            restTimeout: 60000,
+            restTimeout: 30,
+            voiceConnectionTimeout: 15,
+            nodeResolver: (nodes) => {
+                // Pick the connected node with least penalties
+                return [...nodes.values()]
+                    .filter((node) => node.state === 1) // CONNECTED
+                    .sort((a, b) => a.penalties - b.penalties)[0];
+            },
         },
     );
 
