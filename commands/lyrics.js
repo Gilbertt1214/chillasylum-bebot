@@ -106,7 +106,7 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setColor("#5865F2")
-                .setAuthor({ name: "🎤 Lyrics" })
+                .setAuthor({ name: " Lyrics" })
                 .setTitle(`${song.trackName} - ${song.artistName}`)
                 .setDescription(lyrics)
                 .setFooter({
