@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { Client, IntentsBitField, Collection } = require("discord.js");
 const { initLavalink } = require("./utils/lavalink");
+const { AutoPoster } = require("@top-gg/sdk");
 
 const client = new Client({
     intents: [
@@ -119,10 +120,10 @@ client.on("messageCreate", (message) => {
     const hasBadWord = badWords.some((word) => content.includes(word));
     if (hasBadWord) {
         const warnings = [
-                `Hei <@${message.author.id}>, tolong jaga omonganmu ya memek`,
-                `<@${message.author.id}> Ehh, mulutnya kaya ga di sekolahin`,
-                `<@${message.author.id}> pepek so asik kont`,
-                `Sabar <@${message.author.id}>, dek `,
+            `Hei <@${message.author.id}>, tolong jaga omonganmu ya memek`,
+            `<@${message.author.id}> Ehh, mulutnya kaya ga di sekolahin`,
+            `<@${message.author.id}> pepek so asik kont`,
+            `Sabar <@${message.author.id}>, dek `,
         ];
         const randomWarning =
             warnings[Math.floor(Math.random() * warnings.length)];
@@ -183,6 +184,27 @@ process.on("SIGTERM", () => {
 
 // Init Lavalink
 initLavalink(client);
+
+// Init Top.gg AutoPoster (if token provided)
+if (process.env.TOPGG_TOKEN) {
+    try {
+        const autoposter = AutoPoster(process.env.TOPGG_TOKEN, client);
+
+        autoposter.on("posted", (stats) => {
+            console.log(`✅ Top.gg stats posted: ${stats.serverCount} servers`);
+        });
+
+        autoposter.on("error", (error) => {
+            console.error("❌ Top.gg AutoPoster error:", error.message);
+        });
+
+        console.log("🔝 Top.gg AutoPoster initialized");
+    } catch (error) {
+        console.error("❌ Failed to initialize Top.gg:", error.message);
+    }
+} else {
+    console.log("⚠️ Top.gg token not found - stats posting disabled");
+}
 
 // Login bot
 client.login(process.env.DISCORD_TOKEN);
