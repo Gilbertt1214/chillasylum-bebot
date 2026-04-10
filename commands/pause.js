@@ -73,7 +73,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor("#fee75c")
-            .setDescription("⏸️ Lagu di-pause.");
+            .setDescription(" Lagu di-pause.");
         return interaction.reply({ embeds: [embed] });
     },
 };

@@ -172,13 +172,11 @@ process.on("uncaughtException", (error) => {
 
 // Graceful shutdown
 process.on("SIGINT", () => {
-    console.log("🛑 Shutting down...");
     client.destroy();
     process.exit(0);
 });
 
 process.on("SIGTERM", () => {
-    console.log("🛑 Shutting down...");
     client.destroy();
     process.exit(0);
 });
