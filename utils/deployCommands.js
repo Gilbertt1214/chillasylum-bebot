@@ -19,7 +19,6 @@ module.exports = async (client, targetGuildId = null) => {
         // Hanya deploy slash commands
         if ("data" in command && "execute" in command && !command.prefix) {
             commands.push(command.data.toJSON());
-            console.log(`  📝 Preparing: /${command.data.name}`);
         }
     }
 
@@ -31,24 +30,14 @@ module.exports = async (client, targetGuildId = null) => {
         if (targetGuildId) {
             // Deploy ke guild spesifik
             const guild = client.guilds.cache.get(targetGuildId);
-            console.log(
-                `\n🔄 Deploy ${commands.length} slash commands ke server: ${guild ? guild.name : targetGuildId}...`
-            );
             
             const result = await rest.put(
                 Routes.applicationGuildCommands(client.user.id, targetGuildId),
                 { body: commands }
             );
-            console.log(
-                `✅ ${result.length} commands deployed ke: ${guild ? guild.name : targetGuildId}`
-            );
         } else {
             // Deploy ke semua guild
             const guilds = client.guilds.cache;
-
-            console.log(
-                `\n🔄 Deploy ${commands.length} slash commands ke ${guilds.size} server...`
-            );
 
             for (const [guildId, guild] of guilds) {
                 try {
@@ -56,16 +45,13 @@ module.exports = async (client, targetGuildId = null) => {
                         Routes.applicationGuildCommands(client.user.id, guildId),
                         { body: commands }
                     );
-                    console.log(
-                        `✅ ${result.length} commands deployed ke: ${guild.name}`
-                    );
                 } catch (err) {
                     console.error(`❌ Gagal deploy ke ${guild.name}:`, err.message);
                 }
             }
         }
 
-        console.log(`\n✅ Selesai deploy slash commands!`);
+        // Done
     } catch (error) {
         console.error("❌ Error deploying commands:", error);
     }
