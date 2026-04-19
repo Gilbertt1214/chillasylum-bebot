@@ -13,6 +13,7 @@ const client = new Client({
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent,
         IntentsBitField.Flags.GuildVoiceStates,
+        IntentsBitField.Flags.GuildModeration,
     ],
 });
 
@@ -117,35 +118,58 @@ client.on("messageCreate", (message) => {
 
     const content = message.content.toLowerCase();
 
-    // Anti-scam / phishing filter
-    const scamKeywords = [
-        "free nitro",
-        "bisa dapat nitro",
-        "discord nitro gratis",
-        "steam discord",
-        "free robux",
-        "free crypto",
-        "crypto casino",
-        "withdrawal success",
-        "activate code",
-        "airdrop",
-        "claim your reward",
-        "discord.gift/"
+    // Anti-scam / phishing filter (HIGH ACCURACY PARAMS)
+    const phishingLinks = [
+        "disord.gift", "discordc.gift", "dlscord.gift", "discord-nitro", 
+        "steamcommunity-", "steancommunity", "robux-free", "free-nitro"
     ];
     
-    const suspiciousWords = ["crypto", "usdt", "mrbeast", "mr beast", "casino", "giveaway", "claim", "bonus", "free", "win", "reward"];
-    const hasLink = content.includes("http://") || content.includes("https://") || content.includes("discord.gg/");
-    
-    let suspiciousScore = 0;
-    suspiciousWords.forEach(word => {
-        // gunakan \b agar exact match jika memungkinkan, tapi indexOf sudah cukup
-        if (content.includes(word)) suspiciousScore++;
+    const scamPhrases = [
+        "free nitro", "discord nitro gratis", "crypto casino", "withdrawal success", 
+        "activate code", "claim your reward", "airdrop", "bisa dapat nitro"
+    ];
+
+    // 1. Deteksi Pasti Scam (Direct Hit)
+    const isDirectScam = phishingLinks.some(link => content.includes(link)) || 
+                         scamPhrases.some(phrase => content.includes(phrase));
+
+    // 2. Sistem Parameter Kata Kunci (Regex Word Boundary \b agar sangat akurat)
+    // Contoh: \bwin\b hanya mendeteksi "win" utuh, jadi kata "window" tidak akan dideteksi.
+const suspiciousKeywords = [
+    { word: /\bcrypto\b/, weight: 1 },
+    { word: /\busdt\b/, weight: 1 },
+    { word: /\bmr\s*beast\b/, weight: 2 },
+    { word: /\bcasino\b/, weight: 1 },
+    { word: /\bgiveaway\b/, weight: 1 },
+    { word: /\bclaim\b/, weight: 1 },
+    { word: /\bbonus\b/, weight: 1 },
+    { word: /\bfree\b/, weight: 1 },
+    { word: /\bwin\b/, weight: 1 },
+    { word: /\breward\b/, weight: 1 },
+    { word: /\bwallet\b/, weight: 1 }
+];
+
+    let wordScore = 0;
+    suspiciousKeywords.forEach(item => {
+        if (item.word.test(content)) {
+            wordScore += item.weight;
+        }
     });
 
-    // Jika mengandung phrase scam yg PASTI jelas, atau jika mengirim link/@everyone dan ada 2+ kata mencurigakan
-    const isDirectScam = scamKeywords.some(phrase => content.includes(phrase));
-    const isSusScam = (hasLink || content.includes("@everyone") || content.includes("@here")) && suspiciousScore >= 2;
+    const hasLink = content.includes("http://") || content.includes("https://") || content.includes("discord.gg/");
+    const hasMassMention = content.includes("@everyone") || content.includes("@here");
 
+    let isSusScam = false;
+
+    // Rules Eksekusi untuk Kecurigaan (Scoring Logic):
+    // Jika kata-katanya sangat memancing (score >= 3)
+    if (wordScore >= 3) isSusScam = true;
+    // Jika score >= 2 DAN ada Link HTTP di pesannya
+    else if (wordScore >= 2 && hasLink) isSusScam = true;
+    // Jika score >= 1 DAN ada Link DAN mentag @everyone (Sangat tipikal Scam)
+    else if (wordScore >= 1 && hasLink && hasMassMention) isSusScam = true;
+
+    // Eksekusi Penghapusan
     if (isDirectScam || isSusScam) {
         message.delete().catch(err => console.error("Gagal hapus pesan scam:", err));
         message.channel.send(`🚫 <@${message.author.id}>, pesan kamu dihapus karena terdeteksi sebagai indikasi **Scam/Phishing/Spam**!`).then(msg => {
