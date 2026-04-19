@@ -1,7 +1,7 @@
 require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
-const { Client, IntentsBitField, Collection } = require("discord.js");
+const { Client, IntentsBitField, Collection, EmbedBuilder } = require("discord.js");
 const { initLavalink } = require("./utils/lavalink");
 const { askQwen } = require("./utils/ai");
 const { Api: TopggApi } = require("@top-gg/sdk");
@@ -13,6 +13,7 @@ const client = new Client({
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent,
         IntentsBitField.Flags.GuildVoiceStates,
+        IntentsBitField.Flags.GuildModeration,
     ],
 });
 
@@ -116,6 +117,90 @@ client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
     const content = message.content.toLowerCase();
+
+    // Anti-scam / phishing filter (HIGH ACCURACY PARAMS)
+    const phishingLinks = [
+        "disord.gift", "discordc.gift", "dlscord.gift", "discord-nitro", 
+        "steamcommunity-", "steancommunity", "robux-free", "free-nitro"
+    ];
+    
+    const scamPhrases = [
+        "free nitro", "discord nitro gratis", "crypto casino", "withdrawal success", 
+        "activate code", "claim your reward", "airdrop", "bisa dapat nitro"
+    ];
+
+    // 1. Deteksi Pasti Scam (Direct Hit)
+    const isDirectScam = phishingLinks.some(link => content.includes(link)) || 
+                         scamPhrases.some(phrase => content.includes(phrase));
+
+    // 2. Sistem Parameter Kata Kunci (Regex Word Boundary \b agar sangat akurat)
+    // Contoh: \bwin\b hanya mendeteksi "win" utuh, jadi kata "window" tidak akan dideteksi.
+const suspiciousKeywords = [
+    { word: /\bcrypto\b/, weight: 1 },
+    { word: /\busdt\b/, weight: 1 },
+    { word: /\bmr\s*beast\b/, weight: 2 },
+    { word: /\bcasino\b/, weight: 1 },
+    { word: /\bgiveaway\b/, weight: 1 },
+    { word: /\bclaim\b/, weight: 1 },
+    { word: /\bbonus\b/, weight: 1 },
+    { word: /\bfree\b/, weight: 1 },
+    { word: /\bwin\b/, weight: 1 },
+    { word: /\breward\b/, weight: 1 },
+    { word: /\bwallet\b/, weight: 1 }
+];
+
+    let wordScore = 0;
+    suspiciousKeywords.forEach(item => {
+        if (item.word.test(content)) {
+            wordScore += item.weight;
+        }
+    });
+
+    const hasLink = content.includes("http://") || content.includes("https://") || content.includes("discord.gg/");
+    const hasMassMention = content.includes("@everyone") || content.includes("@here");
+
+    let isSusScam = false;
+
+    // Rules Eksekusi untuk Kecurigaan (Scoring Logic):
+    // Jika kata-katanya sangat memancing (score >= 3)
+    if (wordScore >= 3) isSusScam = true;
+    // Jika score >= 2 DAN ada Link HTTP di pesannya
+    else if (wordScore >= 2 && hasLink) isSusScam = true;
+    // Jika score >= 1 DAN ada Link DAN mentag @everyone (Sangat tipikal Scam)
+    else if (wordScore >= 1 && hasLink && hasMassMention) isSusScam = true;
+
+    // Eksekusi Penghapusan
+    if (isDirectScam || isSusScam) {
+        message.delete().catch(err => console.error("Gagal hapus pesan scam:", err));
+        message.channel.send(`🚫 <@${message.author.id}>, pesan kamu dihapus karena terdeteksi sebagai indikasi **Scam/Phishing/Spam**!`).then(msg => {
+            setTimeout(() => msg.delete().catch(() => {}), 7000); // Hapus peringatan setelah 7 detik
+        });
+
+        // Log ke channel logs/mod-logs
+        if (message.guild) {
+            const logChannel = message.guild.channels.cache.find(c => 
+                c.name === "mod-logs" || c.name === "logs" || c.name === "server-logs"
+            );
+            if (logChannel) {
+                let msgContent = message.content || "[Hanya Attachment/Embed]";
+                if (msgContent.length > 1024) msgContent = msgContent.substring(0, 1021) + "...";
+
+                const embed = new EmbedBuilder()
+                    .setTitle("🚨 Scam/Spam Terdeteksi & Dihapus")
+                    .setColor("#FF0000")
+                    .addFields(
+                        { name: "Pelaku", value: `${message.author} (${message.author.tag})`, inline: true },
+                        { name: "Lokasi (Channel)", value: `${message.channel}`, inline: true },
+                        { name: "Isi Pesan", value: msgContent }
+                    )
+                    .setTimestamp();
+                
+                logChannel.send({ embeds: [embed] }).catch(console.error);
+            }
+        }
+
+        return;
+    }
 
     // Check for bad words (any message)
     // Gunakan word boundary agar tidak salah deteksi kata normal (misal "panjang" kena "anj")
