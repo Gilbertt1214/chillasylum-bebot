@@ -17,6 +17,9 @@ module.exports = {
         try {
             await command.execute(interaction);
         } catch (error) {
+            // Kalau error 40060 = interaction sudah dibalas oleh command itu sendiri, abaikan
+            if (error?.code === 40060) return;
+
             console.error(error);
             const errorReply = {
                 content: "❌ Ada error saat menjalankan command!",
@@ -24,14 +27,14 @@ module.exports = {
             };
 
             try {
-                if (interaction.replied) {
+                if (interaction.replied || interaction.deferred) {
                     await interaction.followUp(errorReply);
-                } else if (interaction.deferred) {
-                    await interaction.editReply(errorReply);
                 } else {
                     await interaction.reply(errorReply);
                 }
             } catch (replyError) {
+                // Abaikan error 40060 saat fallback reply
+                if (replyError?.code === 40060) return;
                 console.error("Error saat send error message:", replyError);
             }
         }
