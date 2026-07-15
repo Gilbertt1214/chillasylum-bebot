@@ -70,11 +70,11 @@ if (rawNodes.length === 0) {
     );
 }
 
-// Filter out known dead/offline nodes and inject working backups dynamically
+// Filter out known dead/offline/blocked nodes and inject working backups dynamically
 const nodes = [];
 for (const node of rawNodes) {
-    if (node.url.includes("jirayu.net") || node.url.includes("millohost.my.id")) {
-        console.log(`🧹 Skipping offline/dead node: ${node.name}`);
+    if (node.url.includes("jirayu.net") || node.url.includes("millohost.my.id") || node.url.includes("serenetia.com")) {
+        console.log(`🧹 Skipping blocked/dead node: ${node.name}`);
         continue;
     }
     nodes.push(node);
