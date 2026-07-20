@@ -6,7 +6,7 @@ lavalink:
   server:
     password: "ChillAsylumBebot2026"
     sources:
-      youtube: true
+      youtube: false
       bandcamp: true
       soundcloud: true
       twitch: true
