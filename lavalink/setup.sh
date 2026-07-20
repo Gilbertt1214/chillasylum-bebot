@@ -14,6 +14,25 @@ cd ~/bebot/lavalink
 echo "Mendownload Lavalink.jar..."
 wget -O Lavalink.jar https://github.com/lavalink-devs/Lavalink/releases/download/4.0.8/Lavalink.jar
 
+# 4. Membuat konfigurasi application.yml
+cat <<EOF > application.yml
+lavalink:
+  plugins:
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.5"
+      repository: "https://maven.lavalink.dev/releases"
+
+plugins:
+  youtube:
+    enabled: true
+    allowSearch: true
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    clients:
+      - MUSIC
+      - ANDROID
+      - WEB
+EOF
+
 echo ""
 echo "Instalasi selesai!"
 echo "Sekarang kamu bisa menjalankan Lavalink dengan command:"
