@@ -18,7 +18,7 @@ wget -O Lavalink.jar https://github.com/lavalink-devs/Lavalink/releases/download
 cat <<EOF > application.yml
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.5"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.1"
       repository: "https://maven.lavalink.dev/releases"
 
 plugins:
