@@ -248,6 +248,10 @@ function initLavalink(client) {
                 });
                 if (connected.length === 0) return null;
 
+                // Explicitly prioritize LocalVPS if it's available
+                const localNode = connected.find((n) => n.name === "LocalVPS");
+                if (localNode) return localNode;
+
                 // Prefer Spotify-capable nodes so Spotify searches don't route to incompatible nodes
                 const spotifyCapable = connected.filter((n) => spotifyNodes.has(n.name));
                 const candidates = spotifyCapable.length > 0 ? spotifyCapable : connected;
