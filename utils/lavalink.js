@@ -397,6 +397,8 @@ function initLavalink(client) {
         // Code 4000 = "Too many websocket connections" — stop reconnecting to this node
         // It will only make things worse. Blacklist for 5 minutes, then re-add.
         if (code === 4000) {
+            if (blacklistedNodes.has(name)) return; // Prevent log spam and multiple timeouts
+
             const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
             console.warn(
                 `🚫 Node "${name}" rejected connection (4000). Blacklisting for 5 minutes to prevent reconnect spam.`,
