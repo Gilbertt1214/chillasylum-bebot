@@ -117,7 +117,7 @@ const badWords = [
 ];
 
 // Handle messages
-client.on("messageCreate", (message) => {
+client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
     const content = message.content.toLowerCase();
@@ -238,7 +238,7 @@ const suspiciousKeywords = [
 
     // Respon halo
     const haloKeywords = ["halo", "hai", "hello", "hi", "hey"];
-    if (haloKeywords.some((word) => content.includes(word))) {
+    if (haloKeywords.some((word) => new RegExp(`\\b${word}\\b`).test(content))) {
         message.reply(`👋 Halo <@${message.author.id}>!`);
         return;
     }
@@ -249,8 +249,8 @@ const suspiciousKeywords = [
         if (question.length > 0) {
             message.channel.sendTyping();
             askQwen(question).then(replyText => {
-                message.reply(replyText);
-            });
+                message.reply(replyText).catch(e => console.error("AI reply failed:", e.message));
+            }).catch(e => console.error("AI query failed:", e.message));
             return;
         }
     }
@@ -266,7 +266,7 @@ const suspiciousKeywords = [
     if (!command) return;
 
     try {
-        command.execute(message, args);
+        await command.execute(message, args);
     } catch (error) {
         console.error(error);
         message.reply({
@@ -281,6 +281,12 @@ client.on("error", (error) => {
 });
 
 process.on("unhandledRejection", (reason) => {
+    // Handle KazagumoError (Player already destroyed, etc.)
+    if (reason?.constructor?.name === "KazagumoError" || reason?.name === "KazagumoError") {
+        console.warn(`\u26a0\ufe0f KazagumoError suppressed: ${reason.message}`);
+        return;
+    }
+
     // Gracefully handle Lavalink rate limit (429) errors
     if (reason && (reason.status === 429 || reason.code === 429)) {
         console.warn(
@@ -310,11 +316,25 @@ process.on("uncaughtException", (error) => {
 
 // Graceful shutdown
 process.on("SIGINT", () => {
+    const { getKazagumo } = require("./utils/lavalink");
+    const kaza = getKazagumo();
+    if (kaza) {
+        for (const [, p] of kaza.players) {
+            try { p.destroy(); } catch (_) {}
+        }
+    }
     client.destroy();
     process.exit(0);
 });
 
 process.on("SIGTERM", () => {
+    const { getKazagumo } = require("./utils/lavalink");
+    const kaza = getKazagumo();
+    if (kaza) {
+        for (const [, p] of kaza.players) {
+            try { p.destroy(); } catch (_) {}
+        }
+    }
     client.destroy();
     process.exit(0);
 });

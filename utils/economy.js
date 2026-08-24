@@ -12,12 +12,30 @@ function ensureData() {
 
 function getData() {
     ensureData();
-    return JSON.parse(fs.readFileSync(dataPath, "utf8"));
+    try {
+        const raw = fs.readFileSync(dataPath, "utf8");
+        return JSON.parse(raw || "{}");
+    } catch (e) {
+        console.error("⚠️ Failed to parse economy.json, backing up and resetting:", e.message);
+        try {
+            fs.copyFileSync(dataPath, `${dataPath}.bak.${Date.now()}`);
+        } catch (_) {}
+        return {};
+    }
 }
 
 function saveData(data) {
     ensureData();
-    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+    const tempPath = `${dataPath}.tmp.${process.pid}.${Date.now()}`;
+    try {
+        fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), "utf8");
+        fs.renameSync(tempPath, dataPath);
+    } catch (err) {
+        console.error("❌ Failed to save economy data atomically:", err.message);
+        if (fs.existsSync(tempPath)) {
+            try { fs.unlinkSync(tempPath); } catch (_) {}
+        }
+    }
 }
 
 function getUser(userId) {
@@ -31,7 +49,8 @@ function getUser(userId) {
 
 function updateUser(userId, updates) {
     const data = getData();
-    data[userId] = { ...getUser(userId), ...updates };
+    const currentUser = data[userId] || { balance: 0, lastDaily: 0, lastWork: 0 };
+    data[userId] = { ...currentUser, ...updates };
     saveData(data);
     return data[userId];
 }

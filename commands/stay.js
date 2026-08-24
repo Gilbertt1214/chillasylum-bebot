@@ -27,13 +27,21 @@ module.exports = {
 
         // Create player if not exists
         if (!player) {
-            player = await kazagumo.createPlayer({
-                guildId: interaction.guild.id,
-                textId: interaction.channel.id,
-                voiceId: voiceChannel.id,
-                volume: 100,
-                deaf: true,
-            });
+            try {
+                player = await kazagumo.createPlayer({
+                    guildId: interaction.guild.id,
+                    textId: interaction.channel.id,
+                    voiceId: voiceChannel.id,
+                    volume: 100,
+                    deaf: true,
+                });
+            } catch (createErr) {
+                console.error("Stay createPlayer error:", createErr.message);
+                const embed = new EmbedBuilder()
+                    .setColor("#ed4245")
+                    .setDescription("Gagal membuat koneksi musik. Coba lagi nanti.");
+                return interaction.reply({ embeds: [embed], ephemeral: true });
+            }
             player.data.set("textChannel", interaction.channel);
         }
 

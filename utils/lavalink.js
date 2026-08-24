@@ -44,6 +44,12 @@ if (rawNodes.length === 0) {
     );
     rawNodes.push(
         {
+            name: "LocalVPS",
+            url: "127.0.0.1:2333",
+            auth: "ChillAsylumBebot2026",
+            secure: false,
+        },
+        {
             name: "TriniumHost",
             url: "lavalink-v4.triniumhost.com:443",
             auth: "free",
@@ -69,7 +75,15 @@ for (const node of rawNodes) {
     nodes.push(node);
 }
 
-// Always ensure we have TriniumHost and Serenetia (both Lavalink v4) as backups
+// Always ensure we have LocalVPS, TriniumHost, and Serenetia as backups
+if (!nodes.some(n => n.url.includes("127.0.0.1:2333"))) {
+    nodes.push({
+        name: "LocalVPS",
+        url: "127.0.0.1:2333",
+        auth: "ChillAsylumBebot2026",
+        secure: false,
+    });
+}
 if (!nodes.some(n => n.url.includes("lavalink-v4.triniumhost.com"))) {
     nodes.push({
         name: "TriniumHost",
@@ -119,9 +133,13 @@ function formatDuration(ms) {
 // Safe send embed to channel
 async function safeSend(channel, embed) {
     try {
-        if (channel && typeof channel.send === "function") {
-            await channel.send({ embeds: [embed] });
+        if (!channel || typeof channel.send !== "function") return;
+        // Check bot has SendMessages permission in this channel
+        if (channel.guild) {
+            const perms = channel.permissionsFor?.(channel.guild.members.me);
+            if (perms && !perms.has("SendMessages")) return;
         }
+        await channel.send({ embeds: [embed] });
     } catch (error) {
         console.error("Failed to send embed:", error.message);
     }
@@ -148,15 +166,21 @@ function patchNodeRest(node, nodeName) {
                     console.warn(
                         `⚠️ [${nodeName}] Session/player not found (404) on ${error.path || "unknown"}. Lavalink node likely restarted.`,
                     );
-                    // Try to clean up stale player for this guild
+                    // Clean up stale player from Kazagumo's internal map
+                    // IMPORTANT: Do NOT call stalePlayer.destroy() here — destroy() triggers
+                    // another REST call which loops back through this handler and causes
+                    // "Player is already destroyed" crash.
                     const pathMatch = (error.path || "").match(/players\/(\d+)/);
                     if (pathMatch && kazagumo) {
                         const guildId = pathMatch[1];
                         try {
                             const stalePlayer = kazagumo.players.get(guildId);
                             if (stalePlayer) {
-                                console.log(`🧹 Destroying stale player for guild ${guildId} due to 404`);
-                                stalePlayer.destroy();
+                                console.log(`🧹 Removing stale player for guild ${guildId} due to 404 (local cleanup only)`);
+                                // Disconnect voice channel if possible
+                                try { stalePlayer.connection?.disconnect(); } catch (_) {}
+                                // Remove from Kazagumo's player map without calling REST
+                                kazagumo.players.delete(guildId);
                             }
                         } catch (e) {
                             // Ignore cleanup errors
@@ -234,6 +258,10 @@ function initLavalink(client) {
                 });
                 if (connected.length === 0) return null;
 
+                // Explicitly prioritize LocalVPS if it's available
+                const localNode = connected.find((n) => n.name === "LocalVPS");
+                if (localNode) return localNode;
+
                 // Prefer Spotify-capable nodes so Spotify searches don't route to incompatible nodes
                 const spotifyCapable = connected.filter((n) => spotifyNodes.has(n.name));
                 const candidates = spotifyCapable.length > 0 ? spotifyCapable : connected;
@@ -271,23 +299,33 @@ function initLavalink(client) {
             );
 
             // Re-queue the failed track at the front so it can retry later
+            // But limit retries to prevent infinite loop for permanently broken tracks
             if (endedTrack) {
-                player.queue.unshift(endedTrack);
+                const retryCount = (endedTrack._retryCount || 0) + 1;
+                if (retryCount >= 3) {
+                    console.warn(`⚠️ Track "${trackTitle}" failed ${retryCount} times, removing permanently.`);
+                } else {
+                    endedTrack._retryCount = retryCount;
+                    player.queue.unshift(endedTrack);
+                }
             }
 
             // Pause auto-play briefly to let rate limit cool down
             // We do this by temporarily stopping, then restarting after delay
             setTimeout(async () => {
                 try {
+                    // Use fresh player reference — original may be destroyed
+                    const currentPlayer = kazagumo.players.get(guildId);
+                    if (!currentPlayer) return;
                     if (
-                        player.queue.length > 0 &&
-                        !player.playing &&
-                        !player.paused
+                        currentPlayer.queue.length > 0 &&
+                        !currentPlayer.playing &&
+                        !currentPlayer.paused
                     ) {
                         console.log(
                             `🔄 Resuming playback after cascade cooldown for guild ${guildId}`,
                         );
-                        await player.play();
+                        await currentPlayer.play();
                     }
                 } catch (e) {
                     console.error(
@@ -321,11 +359,17 @@ function initLavalink(client) {
                 try {
                     // Check if this player's node matches the reconnected node
                     if (player.shoukaku?.node?.name === name || player.node?.name === name) {
-                        player.destroy();
+                        // Guard: skip if player is already destroyed
+                        if (player.state === "DESTROYED" || player.destroyed) {
+                            kazagumo.players.delete(guildId);
+                        } else {
+                            player.destroy();
+                        }
                         cleaned++;
                     }
                 } catch (e) {
-                    // Ignore cleanup errors
+                    // Ignore cleanup errors — player may already be destroyed
+                    kazagumo.players.delete(guildId);
                 }
             }
             if (cleaned > 0) {
@@ -379,6 +423,8 @@ function initLavalink(client) {
         // Code 4000 = "Too many websocket connections" — stop reconnecting to this node
         // It will only make things worse. Blacklist for 5 minutes, then re-add.
         if (code === 4000) {
+            if (blacklistedNodes.has(name)) return; // Prevent log spam and multiple timeouts
+
             const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
             console.warn(
                 `🚫 Node "${name}" rejected connection (4000). Blacklisting for 5 minutes to prevent reconnect spam.`,
@@ -549,7 +595,10 @@ function initLavalink(client) {
                 }
 
                 try {
-                    existingPlayer.destroy();
+                    // Guard: only destroy if player is not already destroyed
+                    if (existingPlayer.state !== "DESTROYED" && !existingPlayer.destroyed) {
+                        existingPlayer.destroy();
+                    }
                 } catch (e) {
                     // Ignore if already destroyed
                 }
