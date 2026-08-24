@@ -196,9 +196,13 @@ module.exports = {
         // Clean up invalid/stuck player
         if (player && !player.voiceId) {
             try {
-                player.destroy();
+                if (player.state !== "DESTROYED" && !player.destroyed) {
+                    player.destroy();
+                } else {
+                    kazagumo.players.delete(interaction.guild.id);
+                }
             } catch (e) {
-                // Ignore
+                kazagumo.players.delete(interaction.guild.id);
             }
             player = null;
         }
@@ -292,6 +296,7 @@ module.exports = {
                         const track = result.tracks[0];
                         track.source = "spotify";
                         player.queue.add(track);
+                        const queuePosition = player.queue.length;
 
                         const isPlaying = player.playing || player.paused;
                         if (!isPlaying) {
@@ -321,7 +326,7 @@ module.exports = {
                                 },
                                 {
                                     name: "Position",
-                                    value: `\`#${player.queue.length + 1}\``,
+                                    value: `\`#${queuePosition}\``,
                                     inline: true,
                                 },
                             )
@@ -391,6 +396,7 @@ module.exports = {
                         const track = result.tracks[0];
                         track.source = "deezer";
                         player.queue.add(track);
+                        const queuePosition = player.queue.length;
 
                         const isPlaying = player.playing || player.paused;
                         if (!isPlaying) {
@@ -415,7 +421,7 @@ module.exports = {
                                 },
                                 {
                                     name: "Position",
-                                    value: `\`#${player.queue.length + 1}\``,
+                                    value: `\`#${queuePosition}\``,
                                     inline: true,
                                 },
                             )
@@ -458,6 +464,7 @@ module.exports = {
                         track.uri = meta.uri;
 
                         player.queue.add(track);
+                        const queuePosition = player.queue.length;
 
                         const isPlaying = player.playing || player.paused;
                         if (!isPlaying) await player.play();
@@ -474,7 +481,7 @@ module.exports = {
                             .setDescription(`by **${track.author || "Unknown"}**`)
                             .addFields(
                                 { name: "Duration", value: `\`${meta.duration}\``, inline: true },
-                                { name: "Position", value: `\`#${player.queue.length + 1}\``, inline: true }
+                                { name: "Position", value: `\`#${queuePosition}\``, inline: true }
                             )
                             .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() })
                             .setTimestamp();
@@ -568,6 +575,7 @@ module.exports = {
                 track.source = "youtube"; // Default search goes to YouTube
             }
             player.queue.add(track);
+            const queuePosition = player.queue.length;
 
             const isPlaying = player.playing || player.paused;
             if (!isPlaying) {
@@ -595,7 +603,7 @@ module.exports = {
                     },
                     {
                         name: "Position",
-                        value: `\`#${player.queue.length + 1}\``,
+                        value: `\`#${queuePosition}\``,
                         inline: true,
                     },
                 )

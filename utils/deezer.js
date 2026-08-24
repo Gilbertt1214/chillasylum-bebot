@@ -18,7 +18,7 @@ function parseDeezerUrl(url) {
 function fetchDeezerAPI(endpoint) {
     return new Promise((resolve, reject) => {
         const url = `https://api.deezer.com${endpoint}`;
-        https.get(url, (res) => {
+        const req = https.get(url, (res) => {
             let data = "";
             res.on("data", (chunk) => {
                 data += chunk;
@@ -35,8 +35,14 @@ function fetchDeezerAPI(endpoint) {
                     reject(error);
                 }
             });
-        }).on("error", (error) => {
+        });
+        req.on("error", (error) => {
             reject(error);
+        });
+        // Timeout after 10 seconds to prevent hanging forever
+        req.setTimeout(10000, () => {
+            req.destroy();
+            reject(new Error("Deezer API timeout after 10s"));
         });
     });
 }

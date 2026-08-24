@@ -49,7 +49,9 @@ module.exports = {
         }
 
         try {
-            player.destroy();
+            if (player.state !== "DESTROYED" && !player.destroyed) {
+                player.destroy();
+            }
         } catch (e) {
             console.error("Stop error:", e);
         }

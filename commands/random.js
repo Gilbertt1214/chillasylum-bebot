@@ -161,6 +161,21 @@ module.exports = {
         }
 
         let player = kazagumo.players.get(interaction.guild.id);
+
+        // Clean up invalid/stuck player
+        if (player && !player.voiceId) {
+            try {
+                if (player.state !== "DESTROYED" && !player.destroyed) {
+                    player.destroy();
+                } else {
+                    kazagumo.players.delete(interaction.guild.id);
+                }
+            } catch (e) {
+                kazagumo.players.delete(interaction.guild.id);
+            }
+            player = null;
+        }
+
         if (player && player.voiceId !== voiceChannel.id) {
             const embed = new EmbedBuilder()
                 .setColor("#ed4245")
@@ -188,13 +203,21 @@ module.exports = {
             }
 
             if (!player) {
-                player = await kazagumo.createPlayer({
-                    guildId: interaction.guild.id,
-                    textId: interaction.channel.id,
-                    voiceId: voiceChannel.id,
-                    volume: 100,
-                    deaf: true,
-                });
+                try {
+                    player = await kazagumo.createPlayer({
+                        guildId: interaction.guild.id,
+                        textId: interaction.channel.id,
+                        voiceId: voiceChannel.id,
+                        volume: 100,
+                        deaf: true,
+                    });
+                } catch (createErr) {
+                    console.error("Random createPlayer error:", createErr.message);
+                    const embed = new EmbedBuilder()
+                        .setColor("#ed4245")
+                        .setDescription("Gagal membuat koneksi musik. Coba lagi dalam beberapa detik.");
+                    return interaction.editReply({ embeds: [embed] });
+                }
             }
             player.data.set("textChannel", interaction.channel);
 
