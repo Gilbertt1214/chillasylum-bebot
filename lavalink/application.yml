@@ -1,12 +1,12 @@
 server:
   port: 2333
-  address: 0.0.0.0
+  address: 127.0.0.1  # Hanya localhost untuk keamanan
 
 lavalink:
   server:
     password: "ChillAsylumBebot2026"
     sources:
-      youtube: false
+      youtube: false  # Dihandle oleh youtube-plugin
       bandcamp: true
       soundcloud: true
       twitch: true
@@ -24,7 +24,7 @@ lavalink:
       rotation: true
       channelMix: true
       lowPass: true
-    bufferDurationMs: 1000
+    bufferDurationMs: 2000  # Lebih besar untuk mengurangi stuttering
     frameBufferDurationMs: 5000
     opusEncodingQuality: 10
     resamplingQuality: LOW
@@ -32,9 +32,9 @@ lavalink:
     useSeekGhosting: true
     youtubePlaylistLoadLimit: 6
     playerUpdateInterval: 5
-    youtubeSearchEnabled: true
+    youtubeSearchEnabled: false  # Pakai plugin
     soundcloudSearchEnabled: true
-    gc-warnings: true
+    gc-warnings: false  # Kurangi noise di log
 
   plugins:
     - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.1"
@@ -53,11 +53,12 @@ plugins:
 
 logging:
   file:
+    path: ./logs/
     max-history: 7
     max-size: 25MB
-  path: ./logs/
 
   level:
     root: INFO
     lavalink: INFO
-    dev.lavalink.youtube: WARN
+    dev.lavalink.youtube: INFO  # Ubah ke INFO agar bisa debug YouTube errors
+
