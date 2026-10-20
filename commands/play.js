@@ -116,15 +116,13 @@ async function createPlayerWithRetry(kazagumo, options, maxRetries = 2) {
                 } catch (e) {
                     // Ignore cleanup errors
                 }
-                // Wait before retry (increasing delay)
-                await new Promise((r) => setTimeout(r, 1500 * attempt));
+                // Wait before retry (shorter delay)
+                await new Promise((r) => setTimeout(r, 800 * attempt));
                 console.log(
                     `\uD83D\uDD04 Retry createPlayer attempt ${attempt + 1}/${maxRetries} for guild ${options.guildId}`,
                 );
             }
             const player = await kazagumo.createPlayer(options);
-            // Small delay to let voice connection fully stabilize
-            await new Promise((r) => setTimeout(r, 500));
             return player;
         } catch (error) {
             lastError = error;
@@ -172,10 +170,10 @@ module.exports = {
         // Check if any Lavalink node is connected
         let connectedNodes = kazagumo.shoukaku.nodes ? [...kazagumo.shoukaku.nodes.values()].filter(n => n.state === 1).length : 0;
         
-        // Wait up to 5 seconds for a node to connect if it's still booting
+        // Wait up to 3 seconds for a node to connect if it's still booting
         if (connectedNodes === 0) {
-            for (let i = 0; i < 5; i++) {
-                await new Promise(r => setTimeout(r, 1000));
+            for (let i = 0; i < 6; i++) {
+                await new Promise(r => setTimeout(r, 500));
                 connectedNodes = kazagumo.shoukaku.nodes ? [...kazagumo.shoukaku.nodes.values()].filter(n => n.state === 1).length : 0;
                 if (connectedNodes > 0) break;
             }
