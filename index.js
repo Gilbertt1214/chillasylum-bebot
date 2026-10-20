@@ -307,11 +307,45 @@ process.on("unhandledRejection", (reason) => {
         return;
     }
 
+    // Suppress ECONNREFUSED errors from Lavalink nodes (node is offline)
+    const errMsg = reason?.message || reason?.toString?.() || "";
+    if (errMsg.includes("ECONNREFUSED") || errMsg.includes("connect ECONNREFUSED")) {
+        console.warn(`⚠️ Connection refused (node offline) — suppressed: ${errMsg}`);
+        return;
+    }
+
+    // Suppress WebSocket close errors from Lavalink
+    if (errMsg.includes("Websocket closed") || errMsg.includes("WebSocket") || errMsg.includes("websocket")) {
+        console.warn(`⚠️ WebSocket error suppressed: ${errMsg}`);
+        return;
+    }
+
+    // Suppress "Player is already destroyed" and similar
+    if (errMsg.includes("already destroyed") || errMsg.includes("Player is not") || errMsg.includes("No available")) {
+        console.warn(`⚠️ Player/Node error suppressed: ${errMsg}`);
+        return;
+    }
+
     console.error("Unhandled Rejection:", reason);
 });
 
 process.on("uncaughtException", (error) => {
-    console.error("Uncaught Exception:", error.message);
+    const errMsg = error?.message || "";
+
+    // Don't crash on Lavalink connection errors
+    if (errMsg.includes("ECONNREFUSED") || errMsg.includes("Websocket closed") || errMsg.includes("WebSocket")) {
+        console.error(`⚠️ Caught exception (suppressed): ${errMsg}`);
+        return;
+    }
+
+    // Don't crash on player errors
+    if (errMsg.includes("already destroyed") || errMsg.includes("Player is not")) {
+        console.error(`⚠️ Caught exception (suppressed): ${errMsg}`);
+        return;
+    }
+
+    console.error("Uncaught Exception:", errMsg);
+    console.error(error.stack);
 });
 
 // Graceful shutdown
@@ -345,22 +379,46 @@ initLavalink(client);
 // Init Top.gg stat posting (if token provided)
 if (process.env.TOPGG_TOKEN) {
     const topgg = new TopggApi(process.env.TOPGG_TOKEN);
+    let topggDisabled = false; // Disable posting if token is invalid
+    let topggInterval = null;
 
     const postTopggStats = async () => {
+        if (topggDisabled) return;
+
+        // Don't post if client isn't ready or has no guilds cached yet
+        if (!client.isReady() || client.guilds.cache.size === 0) return;
+
         try {
             await topgg.postStats({
                 serverCount: client.guilds.cache.size,
             });
             console.log(`Top.gg stats posted: ${client.guilds.cache.size} servers`);
         } catch (error) {
-            console.error("❌ Top.gg post stats error:", error.message);
+            const errMsg = error.message || "";
+
+            // 401 = invalid/expired token — disable to prevent spam
+            if (errMsg.includes("401") || errMsg.includes("Unauthorized")) {
+                console.error("❌ Top.gg token is invalid (401 Unauthorized). Disabling stat posting.");
+                console.error("   → Update TOPGG_TOKEN in .env with a valid token from https://top.gg/bot/YOUR_BOT_ID/edit");
+                topggDisabled = true;
+                if (topggInterval) {
+                    clearInterval(topggInterval);
+                    topggInterval = null;
+                }
+                return;
+            }
+
+            console.error("❌ Top.gg post stats error:", errMsg);
         }
     };
 
     // Post stats once bot is ready, then every 30 minutes
     client.once("clientReady", () => {
-        postTopggStats();
-        setInterval(postTopggStats, 30 * 60 * 1000);
+        // Delay first post by 10 seconds to let guilds cache populate
+        setTimeout(() => {
+            postTopggStats();
+            topggInterval = setInterval(postTopggStats, 30 * 60 * 1000);
+        }, 10000);
         console.log("Top.gg stat poster initialized");
     });
 } else {

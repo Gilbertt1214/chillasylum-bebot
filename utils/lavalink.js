@@ -109,6 +109,10 @@ let kazagumo = null;
 // Maps node name -> { until: timestamp, nodeConfig: {...} }
 const blacklistedNodes = new Map();
 
+// Track nodes that have been removed after exhausting reconnect attempts
+// Maps node name -> { nodeConfig, healthCheckInterval }
+const removedNodes = new Map();
+
 // Helper: truncate text safely
 function truncate(str, max) {
     if (!str || typeof str !== "string") return "Unknown";
@@ -240,12 +244,12 @@ function initLavalink(client) {
         new Connectors.DiscordJS(client),
         nodes,
         {
-            moveOnDisconnect: false,
-            resume: false,
-            reconnectTries: 3,
-            reconnectInterval: 15, // 15 seconds between reconnection attempts (prevents spam)
-            restTimeout: 30,
-            voiceConnectionTimeout: 15,
+            moveOnDisconnect: true, // Pindah ke node lain jika disconnect
+            resume: true, // Resume playback setelah reconnect
+            reconnectTries: 3, // 3 retries sebelum menyerah (mencegah spam untuk node mati)
+            reconnectInterval: 15, // 15 detik antara retry
+            restTimeout: 60, // Timeout lebih lama
+            voiceConnectionTimeout: 30, // Timeout voice lebih lama
             nodeResolver: (nodes) => {
                 // Pick connected nodes, exclude blacklisted ones
                 const now = Date.now();
@@ -346,6 +350,14 @@ function initLavalink(client) {
             `Lavalink node "${name}" ${reconnected ? "reconnected" : "connected"}`,
         );
 
+        // Clear health check if this node was being monitored
+        if (removedNodes.has(name)) {
+            const tracked = removedNodes.get(name);
+            if (tracked.healthCheckInterval) clearInterval(tracked.healthCheckInterval);
+            removedNodes.delete(name);
+            console.log(`✅ Node "${name}" is back — health check stopped.`);
+        }
+
         // Patch REST rate-limit handler for this node
         const node = kazagumo.shoukaku.nodes.get(name);
         patchNodeRest(node, name);
@@ -409,6 +421,21 @@ function initLavalink(client) {
 
     kazagumo.shoukaku.on("error", (name, error) => {
         const msg = error?.message || error?.code || error?.toString?.() || "Unknown error";
+
+        // Suppress repeated errors from nodes we already know are offline
+        if (removedNodes.has(name)) return;
+
+        // Suppress ECONNREFUSED spam — we handle this in the disconnect/health-check system
+        if (msg.includes("ECONNREFUSED")) {
+            // Only log if this is the first time seeing this error for this node
+            if (!kazagumo.shoukaku._errorSeen) kazagumo.shoukaku._errorSeen = new Set();
+            if (!kazagumo.shoukaku._errorSeen.has(name)) {
+                kazagumo.shoukaku._errorSeen.add(name);
+                console.error(`❌ Lavalink node "${name}" is unreachable (${msg}). Will retry via health check.`);
+            }
+            return;
+        }
+
         console.error(`❌ Lavalink node "${name}" error: ${msg}`);
     });
 
@@ -479,6 +506,56 @@ function initLavalink(client) {
             `🔌 Lavalink node "${name}" disconnected. Players: ${players.length}, Moved: ${moved}`,
         );
         spotifyNodes.delete(name);
+
+        // When Shoukaku gives up reconnecting (all tries exhausted), the node is disconnected.
+        // Remove it cleanly and start a background health check to re-add it when it comes back.
+        const nodeConfig = nodes.find((n) => n.name === name);
+        if (!nodeConfig) return;
+
+        // Don't double-register if already tracking this node
+        if (removedNodes.has(name) || blacklistedNodes.has(name)) return;
+
+        // Check if the node is still in Shoukaku — if not, it was already removed
+        const existingNode = kazagumo.shoukaku.nodes.get(name);
+        // If the node's state is not connected (state !== 1), start health checking
+        if (!existingNode || existingNode.state !== 1) {
+            console.warn(
+                `💤 Node "${name}" appears offline after disconnect. Starting health check every 2 minutes.`,
+            );
+
+            const HEALTH_CHECK_INTERVAL = 2 * 60 * 1000; // 2 minutes
+            const healthCheckInterval = setInterval(() => {
+                // If node is already back (re-added by another path), stop checking
+                const currentNode = kazagumo.shoukaku.nodes.get(name);
+                if (currentNode && currentNode.state === 1) {
+                    console.log(`✅ Node "${name}" is back online. Stopping health check.`);
+                    clearInterval(healthCheckInterval);
+                    removedNodes.delete(name);
+                    return;
+                }
+
+                // Try to re-add the node
+                console.log(`🩺 Health check: attempting to re-add node "${name}"...`);
+                try {
+                    // Remove stale entry first if it exists
+                    try { kazagumo.shoukaku.removeNode(name, "Health check cleanup"); } catch (_) {}
+
+                    kazagumo.shoukaku.addNode({
+                        name: nodeConfig.name,
+                        url: nodeConfig.url,
+                        auth: nodeConfig.auth,
+                        secure: nodeConfig.secure,
+                    });
+                } catch (e) {
+                    console.log(`⏳ Node "${name}" still offline: ${e.message}`);
+                }
+            }, HEALTH_CHECK_INTERVAL);
+
+            removedNodes.set(name, {
+                nodeConfig,
+                healthCheckInterval,
+            });
+        }
     });
 
     // Player start - Now Playing with cooldown to prevent spam
