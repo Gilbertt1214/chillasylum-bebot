@@ -37,7 +37,7 @@ lavalink:
     gc-warnings: false  # Kurangi noise di log
 
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.1"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.2"
       repository: "https://maven.lavalink.dev/releases"
 
 plugins:
@@ -47,6 +47,8 @@ plugins:
     allowDirectVideoIds: true
     allowDirectPlaylistIds: true
     clients:
+      - TVHTML5EMBEDDED
+      - ANDROID_VR
       - MUSIC
       - ANDROID
       - WEB
@@ -60,5 +62,4 @@ logging:
   level:
     root: INFO
     lavalink: INFO
-    dev.lavalink.youtube: INFO  # Ubah ke INFO agar bisa debug YouTube errors
-
+    dev.lavalink.youtube: INFO

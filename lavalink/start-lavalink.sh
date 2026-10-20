@@ -82,6 +82,9 @@ if [ ! -f "$LAVALINK_DIR/application.yml" ]; then
     exit 1
 fi
 
+# Bersihkan plugin lama jika ada
+rm -f "$LAVALINK_DIR/plugins/youtube-plugin-1.18.1.jar"
+
 # 4. Jalankan Lavalink
 echo ""
 echo "🚀 Menjalankan Lavalink Server..."
