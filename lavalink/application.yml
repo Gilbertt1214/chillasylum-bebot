@@ -50,6 +50,25 @@ plugins:
       - MUSIC
       - ANDROID_VR
       - WEB
+      - WEBEMBEDDED
+    clientOptions:
+      WEB:
+        playback: false
+        videoLoading: true
+        playlistLoading: true
+        searching: true
+      ANDROID_VR:
+        playback: true
+        videoLoading: false
+        searching: false
+      MUSIC:
+        playback: true
+        videoLoading: true
+        searching: true
+      WEBEMBEDDED:
+        playback: true
+        videoLoading: true
+        searching: false
 
 logging:
   file:
