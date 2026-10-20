@@ -44,12 +44,6 @@ if (rawNodes.length === 0) {
     );
     rawNodes.push(
         {
-            name: "LocalVPS",
-            url: "127.0.0.1:2333",
-            auth: "ChillAsylumBebot2026",
-            secure: false,
-        },
-        {
             name: "TriniumHost",
             url: "lavalink-v4.triniumhost.com:443",
             auth: "free",
@@ -75,15 +69,7 @@ for (const node of rawNodes) {
     nodes.push(node);
 }
 
-// Always ensure we have LocalVPS, TriniumHost, and Serenetia as backups
-if (!nodes.some(n => n.url.includes("127.0.0.1:2333"))) {
-    nodes.push({
-        name: "LocalVPS",
-        url: "127.0.0.1:2333",
-        auth: "ChillAsylumBebot2026",
-        secure: false,
-    });
-}
+// Always ensure we have TriniumHost and Serenetia as backups
 if (!nodes.some(n => n.url.includes("lavalink-v4.triniumhost.com"))) {
     nodes.push({
         name: "TriniumHost",
